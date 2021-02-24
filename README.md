@@ -13,7 +13,10 @@ cmake --build . --config Release
 # Run
 
 ## Visual Studio
-![SetUpVS](https://github.com/winsingaaron/Inhouse_QtOpenGL/blob/master/resource/images/set_up_in_vs.jpg?raw=true)
+
+<div align=center>
+<img src="https://github.com/winsingaaron/Inhouse_QtOpenGL/blob/master/resource/images/set_up_in_vs.jpg?raw=true" width="600">
+</div>
 
 ## Command line
 ```bash
