@@ -13,7 +13,7 @@ cmake --build . --config Release
 # Run
 
 ## Visual Studio
-![]https://github.com/winsingaaron/Inhouse_QtOpenGL/blob/master/resource/images/set_up_in_vs.jpg?raw=true
+![SetUpVS](https://github.com/winsingaaron/Inhouse_QtOpenGL/blob/master/resource/images/set_up_in_vs.jpg?raw=true)
 
 ## Command line
 ```bash
