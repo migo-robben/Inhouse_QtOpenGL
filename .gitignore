@@ -1,3 +1,7 @@
+# Build
+build
+cmake-build-*
+
 ### C++ template
 # Compiled Object files
 *.slo
