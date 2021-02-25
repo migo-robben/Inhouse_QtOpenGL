@@ -1,4 +1,4 @@
-#include "openglwindow.h"
+#include "OpenGLWindow.h"
 
 #include <QScreen>
 #include <QMatrix4x4>
@@ -71,7 +71,6 @@ void TriangleWindow::initialize() {
 void TriangleWindow::render() {
     glViewport(0, 0, width() * devicePixelRatio(), height() * devicePixelRatio());
     glClear(GL_COLOR_BUFFER_BIT);
-    glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
 
     m_program->bind();
 
