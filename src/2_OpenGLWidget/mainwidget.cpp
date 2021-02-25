@@ -66,11 +66,11 @@ void MainWidget::paintGL() {
 
 void MainWidget::initShaders() {
     // Compile vertex shader
-    if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, "F:\\CLionProjects\\Inhouse_QtOpenGL\\src\\2_OpenGLWidget\\Plane.vs.glsl"))
+    if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, "src\\2_OpenGLWidget\\Plane.vs.glsl"))
         close();
 
     // Compile fragment shader
-    if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, "F:\\CLionProjects\\Inhouse_QtOpenGL\\src\\2_OpenGLWidget\\Plane.fs.glsl"))
+    if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, "src\\2_OpenGLWidget\\Plane.fs.glsl"))
         close();
 
     // Link shader pipeline

@@ -22,3 +22,9 @@ cmake --build . --config Release
 ```bash
 set QT_PLUGIN_PATH=[path]\Qt\5.12.6\msvc2017_64\plugins
 ```
+
+## Clion
+
+<div align=center>
+<img src="https://github.com/winsingaaron/Inhouse_QtOpenGL/blob/master/resource/images/run_clion.jpg?raw=true" width="600">
+</div>
