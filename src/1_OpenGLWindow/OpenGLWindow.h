@@ -3,8 +3,10 @@
 
 #include <QWindow>
 #include <QOpenGLFunctions_4_5_Core>
+#include <QOpenGLFunctions>
 
-class OpenGLWindow : public QWindow, protected QOpenGLFunctions_4_5_Core {
+class OpenGLWindow : public QWindow, protected QOpenGLFunctions {
+Q_OBJECT
 public:
     explicit OpenGLWindow(QWindow *parent = nullptr);
     ~OpenGLWindow() override;

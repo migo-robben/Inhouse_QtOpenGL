@@ -1,0 +1,10 @@
+#ifndef QTOPENGLREFERENCE_PTRIANGLEWINDOW_H
+#define QTOPENGLREFERENCE_PTRIANGLEWINDOW_H
+#include "POpenGLWindow.h"
+
+class PTriangleWindow: public POpenGLWindow {
+
+};
+
+
+#endif //QTOPENGLREFERENCE_PTRIANGLEWINDOW_H
