@@ -13,3 +13,4 @@ find_package(Qt5Widgets REQUIRED)
 
 add_subdirectory(src)
 add_subdirectory(practice)
+add_subdirectory(examples)
