@@ -50,7 +50,7 @@
 
 #include "renderer.h"
 #include <QVulkanFunctions>
-#include <QtConcurrentRun>
+#include <QtConcurrent/QtConcurrentRun>
 #include <QTime>
 
 static float quadVert[] = { // Y up, front = CW
@@ -83,8 +83,8 @@ Renderer::Renderer(VulkanWindow *w, int initialCount)
     m_floorModel.rotate(-90, 1, 0, 0);
     m_floorModel.scale(20, 100, 1);
 
-    m_blockMesh.load(QStringLiteral(":/block.buf"));
-    m_logoMesh.load(QStringLiteral(":/qt_logo.buf"));
+    m_blockMesh.load(QStringLiteral("block.buf"));
+    m_logoMesh.load(QStringLiteral("qt_logo.buf"));  // :/qt_logo.buf
 
     QObject::connect(&m_frameWatcher, &QFutureWatcherBase::finished, [this] {
         if (m_framePending) {
@@ -128,14 +128,14 @@ void Renderer::initResources()
     m_itemMaterial.fragUniSize = aligned(6 * 16 + 12 + 2 * 4, uniAlign); // see color_phong.frag
 
     if (!m_itemMaterial.vs.isValid())
-        m_itemMaterial.vs.load(inst, dev, QStringLiteral(":/color_phong_vert.spv"));
+        m_itemMaterial.vs.load(inst, dev, QStringLiteral("color_phong_vert.spv"));
     if (!m_itemMaterial.fs.isValid())
-        m_itemMaterial.fs.load(inst, dev, QStringLiteral(":/color_phong_frag.spv"));
+        m_itemMaterial.fs.load(inst, dev, QStringLiteral("color_phong_frag.spv"));
 
     if (!m_floorMaterial.vs.isValid())
-        m_floorMaterial.vs.load(inst, dev, QStringLiteral(":/color_vert.spv"));
+        m_floorMaterial.vs.load(inst, dev, QStringLiteral("color_vert.spv"));
     if (!m_floorMaterial.fs.isValid())
-        m_floorMaterial.fs.load(inst, dev, QStringLiteral(":/color_frag.spv"));
+        m_floorMaterial.fs.load(inst, dev, QStringLiteral("color_frag.spv"));
 
     m_pipelinesFuture = QtConcurrent::run(this, &Renderer::createPipelines);
 }

@@ -49,7 +49,8 @@
 ****************************************************************************/
 
 #include "mesh.h"
-#include <QtConcurrentRun>
+#include <QException>
+#include <QtConcurrent/QtConcurrentRun>
 #include <QFile>
 
 void Mesh::load(const QString &fn)

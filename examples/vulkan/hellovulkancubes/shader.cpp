@@ -49,7 +49,8 @@
 ****************************************************************************/
 
 #include "shader.h"
-#include <QtConcurrentRun>
+// #include <QtConcurrentRun>
+#include <QtConcurrent/QtConcurrentRun>
 #include <QFile>
 #include <QVulkanDeviceFunctions>
 

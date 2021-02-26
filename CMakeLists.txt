@@ -8,6 +8,11 @@ set(CMAKE_AUTORCC ON)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+if(${EXAMPLE_VULKAN})
+    find_package(Vulkan REQUIRED)
+    include_directories(BEFORE SYSTEM "${Vulkan_INCLUDE_DIRS}")
+endif()
+
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Widgets REQUIRED)
 
