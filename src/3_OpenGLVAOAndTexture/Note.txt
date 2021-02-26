@@ -1,0 +1,2 @@
+1.  vao.bind()与vao.release()一起使用
+    QOpenGLVertexArrayObject::Binder vaoBinder(&vao);则不用，在函数作用域内，先bind vao，函数完成后 release vao。
