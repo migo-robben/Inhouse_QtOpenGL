@@ -2,6 +2,7 @@
 
 #include <QDebug>
 #include <QPainter>
+#include <QPainterPath>
 #include <QOpenGLContext>
 #include <QOpenGLPaintDevice>
 
