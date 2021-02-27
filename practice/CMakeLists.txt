@@ -1,1 +1,2 @@
 add_subdirectory(1_OpenGLWindow)
+add_subdirectory(2_VAOAndTexture)
