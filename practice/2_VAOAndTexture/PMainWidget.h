@@ -14,41 +14,20 @@ struct VertexData
     QVector2D coord;
 };
 
-class PMainWidget: public QOpenGLWidget, QOpenGLFunctions_4_5_Core {
+class PMainWidget: public QOpenGLWidget {
 public:
     explicit PMainWidget(QWidget *parent=nullptr);
     ~PMainWidget() override;
 
 protected:
-    void initializeGL() override;
-    void resizeGL(int w, int h) override;
-    void paintGL() override;
     QSize sizeHint() const override;
 
-    void initShaders();
-    void initPlaneGeometry();
-    void initTextures();
-
-    QVector<VertexData> getVerticesData();
-    QVector<GLushort> getIndices();
-
-private:
-    QOpenGLShaderProgram program;
-    QOpenGLTexture *texture{};
-
-    QMatrix4x4 projection;
-
-    QOpenGLVertexArrayObject vao;
-    QOpenGLBuffer vbo; // Vertex Buffer
-    QOpenGLBuffer ebo; // Index Buffer
-
-private:
-    QVector<VertexData> vertices;
-    QVector<GLushort> indices;
-
-    int vertexLocation{};
-    int colorLocation{};
-    int coordLocation{};
+public:
+    virtual void initShaders()=0;
+    virtual void initPlaneGeometry()=0;
+    virtual void initTextures()=0;
+    virtual QVector<VertexData> getVerticesData()=0;
+    virtual QVector<GLushort> getIndices()=0;
 };
 
 

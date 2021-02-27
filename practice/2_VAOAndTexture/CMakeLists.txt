@@ -1,7 +1,7 @@
 set(TARGET_NAME InHouse_P_VAOAndTexture)
 
 FILE (GLOB COMPILE_FILES CONFIGURE_DEPENDS *.cpp *.h )
-add_executable(${TARGET_NAME} ${COMPILE_FILES} PPlane.cpp PPlane.h PPlaneWidget.cpp PPlaneWidget.h PTriangleWidget.cpp PTriangleWidget.h)
+add_executable(${TARGET_NAME} ${COMPILE_FILES})
 
 target_link_libraries(${TARGET_NAME} Qt5::Core)
 target_link_libraries(${TARGET_NAME} Qt5::Widgets)

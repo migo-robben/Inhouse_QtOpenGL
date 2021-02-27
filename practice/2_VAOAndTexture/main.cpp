@@ -1,7 +1,7 @@
 #include <QDebug>
 #include <QApplication>
 #include <QSurfaceFormat>
-#include "PMainWidget.h"
+#include "PPlaneWidget.h"
 
 int main(int argc, char *argv[])
 {
@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     format.setProfile(QSurfaceFormat::CoreProfile);
     QSurfaceFormat::setDefaultFormat(format);
 
-    PMainWidget widget;
+    PPlaneWidget widget;
     widget.show();
 
     return QApplication::exec();
