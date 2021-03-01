@@ -132,7 +132,7 @@ void MainWidget::initPlaneGeometry() {
 }
 
 void MainWidget::initTextures() {
-    texture = new QOpenGLTexture(QImage(QString("src\\3_OpenGLVAOAndTexture\\texture\\wall.jpg")));
+    texture = new QOpenGLTexture(QImage(QString("src\\texture\\wall.jpg")));
 }
 
 QVector<VertexData> MainWidget::getVerticesData() {
