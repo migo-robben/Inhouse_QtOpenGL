@@ -70,11 +70,11 @@ void MainWidget::paintGL() {
 
 void MainWidget::initShaders() {
     // Compile vertex shader
-    if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, "src\\3_OpenGLVAOAndTexture\\Plane.vs.glsl"))
+    if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, "src/Shaders/Plane.vs.glsl"))
         close();
 
     // Compile fragment shader
-    if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, "src\\3_OpenGLVAOAndTexture\\Plane.fs.glsl"))
+    if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, "src/Shaders/Plane.fs.glsl"))
         close();
 
     // Link shader pipeline
@@ -132,7 +132,7 @@ void MainWidget::initPlaneGeometry() {
 }
 
 void MainWidget::initTextures() {
-    texture = new QOpenGLTexture(QImage(QString("src\\texture\\wall.jpg")));
+    texture = new QOpenGLTexture(QImage(QString("src/texture/wall.jpg")));
 }
 
 QVector<VertexData> MainWidget::getVerticesData() {

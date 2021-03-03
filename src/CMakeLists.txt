@@ -1,4 +1,5 @@
-#add_subdirectory(1_OpenGLWindow)
-#add_subdirectory(2_OpenGLWidget)
-#add_subdirectory(3_OpenGLVAOAndTexture)
+add_subdirectory(1_OpenGLWindow)
+add_subdirectory(2_OpenGLWidget)
+add_subdirectory(3_OpenGLVAOAndTexture)
 add_subdirectory(4_OpenGLCamera)
+add_subdirectory(5_CubeMap)
