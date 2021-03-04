@@ -71,10 +71,10 @@ void MainWidget::resizeGL(int width, int height) {
 }
 
 void MainWidget::initShaders() {
-    if (!program->addShaderFromSourceFile(QOpenGLShader::Vertex, "src\\Shaders\\Cube.vs.glsl"))
+    if (!program->addShaderFromSourceFile(QOpenGLShader::Vertex, "src\\Shaders\\SimpleObject.vs.glsl"))
         close();
 
-    if (!program->addShaderFromSourceFile(QOpenGLShader::Fragment, "src\\Shaders\\Cube.fs.glsl"))
+    if (!program->addShaderFromSourceFile(QOpenGLShader::Fragment, "src\\Shaders\\SimpleObject.fs.glsl"))
         close();
 
     if (!program->link())

@@ -5,11 +5,12 @@
 
 MainWidget::MainWidget(QWidget *parent)
         : QOpenGLWidget(parent),
-          skyboxGeometry(nullptr),
           cubeGeometry(nullptr),
-          camera(nullptr),
-          skyboxTexture(nullptr),
-          containerTexture(nullptr) {
+          gridGeometry(nullptr),
+          containerTexture(nullptr),
+          fbo(nullptr),
+          justForDebug(false),
+          camera(nullptr) {
 
     // Create two shader program
     // the first one use for offscreen rendering
@@ -18,7 +19,7 @@ MainWidget::MainWidget(QWidget *parent)
         programs.push_back(new QOpenGLShaderProgram(this));
     }
 
-    QVector3D cameraPos(0.0, 0.0, 8);
+    QVector3D cameraPos(0.0, 0.0, 8.0);
     camera = new Camera(cameraPos);
 }
 
@@ -47,31 +48,65 @@ void MainWidget::initializeGL() {
 
     glSetting();
     initGeometry();
+
+    fbo = createFBOPointer();
+}
+
+void MainWidget::glSetting() {
+    // Enable depth buffer
+    glEnable(GL_DEPTH_TEST);
 }
 
 void MainWidget::paintGL() {
+    fbo->bind();
     glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glEnable(GL_DEPTH_TEST);
 
     model.setToIdentity();
     model.rotate(45,0,1,0);
     cubeGeometry->drawGeometry(
-            SHADER(1),
+            SHADER(0),
             model,
             camera->getCameraView(),
             camera->getCameraProjection(),
             containerTexture);
 
-    // draw cube box
-    // 系统的最大深度为1，又因为skybox shader设置了box的深度为1，所以要修改一下深度测试方程
-    // 使得box的深度小于或这等于系统的最大深度也能通过深度测试
-    glDepthFunc(GL_LEQUAL);
-    skyboxGeometry->drawGeometry(
+    model.setToIdentity();
+    model.translate(2.5, -0.5, 0);
+    model.rotate(-15,0,1,0);
+    model.scale(0.5f);
+    cubeGeometry->drawGeometry(
             SHADER(0),
+            model,
             camera->getCameraView(),
             camera->getCameraProjection(),
-            skyboxTexture);
-    glDepthFunc(GL_LESS);
+            containerTexture);
+
+    model.setToIdentity();
+    model.translate(0, -1.05, 0);
+    model.rotate(QQuaternion::fromAxisAndAngle(QVector3D(1,0,0), -90));
+    model.scale(5.0);
+    gridGeometry->drawGeometry(SHADER(0),
+                                 model,
+                                 camera->getCameraView(),
+                                 camera->getCameraProjection(),
+                                 gridTexture);
+
+    QOpenGLFramebufferObject::bindDefault();
+
+    glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    if (justForDebug) {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        gridGeometry->drawGeometry(SHADER(1));
+    }
+    else {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        gridGeometry->drawGeometry(SHADER(1), fbo, false);
+    }
 }
 
 void MainWidget::resizeGL(int width, int height) {
@@ -79,80 +114,56 @@ void MainWidget::resizeGL(int width, int height) {
     qreal aspect = qreal(width) / qreal(height ? height : 1);
     camera->setCameraPerspective(aspect);
 
+    if (fbo != nullptr) {
+        delete fbo;
+        fbo = nullptr;
+    }
+    fbo = createFBOPointer();
+
     return QOpenGLWidget::resizeGL(width, height);
 }
 
 void MainWidget::initShaders() {
-    // for cube box
-    if (!SHADER(0)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/Shaders/Skybox.vs.glsl"))
+    // init first shader program
+    if (!SHADER(0)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/Shaders/SimpleObject.vs.glsl"))
         close();
-    if (!SHADER(0)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/Shaders/Skybox.fs.glsl"))
+    if (!SHADER(0)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/Shaders/SimpleObject.fs.glsl"))
         close();
     if (!SHADER(0)->link())
         close();
-    if (!SHADER(0)->bind())
-        close();
 
-    if (!SHADER(1)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/Shaders/SimpleObject.vs.glsl"))
+    // init second shader program - for screen quad
+    if (!SHADER(1)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/Shaders/ScreenPlane.vs.glsl"))
         close();
-    if (!SHADER(1)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/Shaders/SimpleObject.fs.glsl"))
+    if (!SHADER(1)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/Shaders/ScreenPlane.fs.glsl"))
         close();
     if (!SHADER(1)->link())
-        close();
-    if (!SHADER(1)->bind())
         close();
 }
 
 void MainWidget::initGeometry() {
-    skyboxGeometry = new SkyboxGeometry;
-    skyboxGeometry->initGeometry();
-    skyboxGeometry->setupAttributePointer(SHADER(0));
-
     cubeGeometry = new CubeGeometry;
     cubeGeometry->initGeometry();
-    cubeGeometry->setupAttributePointer(SHADER(1));
+    cubeGeometry->setupAttributePointer(SHADER(0));
+
+    gridGeometry = new GridGeometry;
+    gridGeometry->initGeometry();
+    gridGeometry->setupAttributePointer(SHADER(0));
 }
 
 void MainWidget::initTexture() {
-    loadCubeMap();
-
     containerTexture = new QOpenGLTexture(QImage(QString("src/texture/container.jpg")));
-    containerTexture->setWrapMode(QOpenGLTexture::ClampToEdge);
-    containerTexture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
-    containerTexture->setMagnificationFilter(QOpenGLTexture::Linear);
+    gridTexture = new QOpenGLTexture(QImage(QString("src/texture/metal.png")));
 }
 
-void MainWidget::loadCubeMap() {
-    const QImage tempImage = QImage(faces.at(0)).convertToFormat(QImage::Format_RGBA8888);
+QOpenGLFramebufferObject* MainWidget::createFBOPointer() {
+    QOpenGLFramebufferObjectFormat format;
+    format.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
+    format.setInternalTextureFormat(QOpenGLTexture::RGB8_UNorm);
+    format.setSamples(16);
 
-    skyboxTexture = new QOpenGLTexture(QOpenGLTexture::TargetCubeMap);
-    skyboxTexture->create();
-    skyboxTexture->setSize(tempImage.width(), tempImage.height(), tempImage.depth());
-    skyboxTexture->setFormat(QOpenGLTexture::RGBA8_UNorm);
-    skyboxTexture->setMipLevels(skyboxTexture->maximumMipLevels());
-    skyboxTexture->allocateStorage(QOpenGLTexture::RGBA, QOpenGLTexture::UInt8);
-
-    for (int i=0; i<6; i++) {
-        const QImage imageData = QImage(faces.at(i)).convertToFormat(QImage::Format_RGBA8888);
-        skyboxTexture->setData(
-                0,
-                0,
-                static_cast<QOpenGLTexture::CubeMapFace>(QOpenGLTexture::CubeMapPositiveX + i),
-                QOpenGLTexture::RGBA,
-                QOpenGLTexture::UInt8,
-                imageData.constBits(),
-                Q_NULLPTR);
-    }
-
-    skyboxTexture->setWrapMode(QOpenGLTexture::ClampToEdge);
-    skyboxTexture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
-    skyboxTexture->setMagnificationFilter(QOpenGLTexture::Linear);
-    skyboxTexture->generateMipMaps();
-}
-
-void MainWidget::glSetting() {
-    // Enable depth buffer
-    glEnable(GL_DEPTH_TEST);
+    QSize frameBufferSize(width() * devicePixelRatio(), height() * devicePixelRatio());
+    return new QOpenGLFramebufferObject(frameBufferSize, format);
 }
 
 void MainWidget::cleanup() {
@@ -161,17 +172,19 @@ void MainWidget::cleanup() {
     // delete programs
     qDeleteAll(programs);
     programs.clear();
-    delete camera;
-    delete skyboxTexture;
     delete containerTexture;
+    delete gridTexture;
     delete cubeGeometry;
-    delete skyboxGeometry;
+    delete gridGeometry;
+    delete camera;
+    delete fbo;
 
-    camera = nullptr;
-    skyboxTexture = nullptr;
     containerTexture = nullptr;
+    gridTexture = nullptr;
     cubeGeometry = nullptr;
-    skyboxGeometry = nullptr;
+    gridGeometry = nullptr;
+    camera = nullptr;
+    fbo = nullptr;
 
     doneCurrent();
 }
@@ -232,7 +245,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent *event) {
     }
     else if (event->buttons() == Qt::RightButton && event->modifiers() == Qt::AltModifier) {
         QPoint offset = event->pos() - mousePos;
-        
+
         camera->cameraZoomEvent(offset);
 
         // update viewport
@@ -270,4 +283,12 @@ void MainWidget::wheelEvent(QWheelEvent *event) {
     update();
 
     QWidget::wheelEvent(event);
+}
+
+void MainWidget::keyPressEvent(QKeyEvent *event) {
+    if (event->key() == Qt::Key_D) {
+        justForDebug = !justForDebug;
+        update();
+    }
+    QWidget::keyPressEvent(event);
 }
