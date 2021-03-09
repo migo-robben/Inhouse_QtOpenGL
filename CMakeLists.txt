@@ -13,6 +13,7 @@ if(${EXAMPLE_VULKAN})
     include_directories(BEFORE SYSTEM "${Vulkan_INCLUDE_DIRS}")
 endif()
 
+find_package(Assimp CONFIG)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Widgets REQUIRED)
 
