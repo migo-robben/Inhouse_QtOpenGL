@@ -30,6 +30,11 @@ public:
                       QMatrix4x4 projection,
                       QOpenGLTexture *texture) override;
 
+    void drawGeometry(QOpenGLShaderProgram *program,
+                      QMatrix4x4 model,
+                      QMatrix4x4 view,
+                      QMatrix4x4 projection);
+
 protected:
     QVector<VertexData> getVerticesData() override;
     QVector<GLuint> getIndices() override;

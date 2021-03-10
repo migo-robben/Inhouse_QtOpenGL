@@ -49,7 +49,7 @@ void CustomGeometry::initGeometry() {
     // read file via ASSIMP
     Assimp::Importer importer;
     importer.SetPropertyInteger(AI_CONFIG_PP_PTV_NORMALIZE, true);
-    const aiScene* scene = importer.ReadFile(modelFilePath.toStdString(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+    const aiScene* scene = importer.ReadFile(modelFilePath.toStdString(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_PreTransformVertices);
     // check for errors
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
     {
@@ -85,6 +85,17 @@ void CustomGeometry::drawGeometry(QOpenGLShaderProgram *program,
 
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
     texture->bind();
+    glDrawElements(GL_TRIANGLES, VerticesCount(), GL_UNSIGNED_INT, (void*)0);
+}
+
+void CustomGeometry::drawGeometry(QOpenGLShaderProgram *program, QMatrix4x4 model, QMatrix4x4 view, QMatrix4x4 projection) {
+    program->bind();
+
+    program->setUniformValue("model", model);
+    program->setUniformValue("view", view);
+    program->setUniformValue("projection", projection);
+
+    QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
     glDrawElements(GL_TRIANGLES, VerticesCount(), GL_UNSIGNED_INT, (void*)0);
 }
 
