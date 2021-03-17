@@ -4,5 +4,6 @@
 #add_subdirectory(4_OpenGLCamera)
 #add_subdirectory(5_CubeMap)
 #add_subdirectory(6_Framebuffer)
-add_subdirectory(7_Models)
-add_subdirectory(8_NormalMap)
+#add_subdirectory(7_Models)
+#add_subdirectory(8_NormalMap)
+add_subdirectory(9_PBRLight)
