@@ -10,7 +10,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 if(${EXAMPLE_VULKAN})
     find_package(Vulkan REQUIRED)
-    include_directories(BEFORE SYSTEM "${Vulkan_INCLUDE_DIRS}")
+    include_directories(BEFORE SYSTEM "${Vulkan_INCLUDE_DIR}")
 endif()
 
 find_package(Assimp CONFIG)

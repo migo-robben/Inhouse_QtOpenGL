@@ -52,6 +52,14 @@ void CubeGeometry::drawGeometry(QOpenGLShaderProgram *program,
     glDrawElements(GL_TRIANGLE_STRIP, VerticesCount(), GL_UNSIGNED_INT, (void*)0);
 }
 
+void CubeGeometry::drawGeometry(QOpenGLShaderProgram *program, QOpenGLTexture *texture) {
+    program->bind();
+    QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
+
+    texture->bind();
+    glDrawElements(GL_TRIANGLE_STRIP, VerticesCount(), GL_UNSIGNED_INT, (void*)0);
+}
+
 QVector<VertexData> CubeGeometry::getVerticesData() {
     vertices = {
             // Vertex data for face 0

@@ -6,4 +6,5 @@
 #add_subdirectory(6_Framebuffer)
 #add_subdirectory(7_Models)
 #add_subdirectory(8_NormalMap)
-add_subdirectory(9_PBRLight)
+#add_subdirectory(9_PBRLight)
+add_subdirectory(10_IBL_Irradiance)
