@@ -1,21 +1,20 @@
-#ifndef INHOUSE_QTOPENGL_CUBEGEOMETRY_H
-#define INHOUSE_QTOPENGL_CUBEGEOMETRY_H
-
-#include <QOpenGLBuffer>
-#include <QOpenGLTexture>
-#include <QOpenGLFunctions>
-#include <QOpenGLShaderProgram>
-#include <QOpenGLVertexArrayObject>
+#ifndef _RECTANGLEGEOMETRY_H_
+#define _RECTANGLEGEOMETRY_H_
 
 #include "Helper/Geometry.h"
 
-class Geometry;
+#include <QOpenGLBuffer>
+#include <QOpenGLTexture>
+#include <QScopedPointer>
+#include <QOpenGLShaderProgram>
+#include <QOpenGLVertexArrayObject>
+#include <QOpenGLFramebufferObject>
+#include <QOpenGLFunctions_4_5_Core>
 
-class CubeGeometry : public Geometry
-{
+class RectangleGeometry : public Geometry {
 public:
-    CubeGeometry() = default;
-    ~CubeGeometry() override = default;
+    RectangleGeometry() = default;
+    ~RectangleGeometry() override = default;
 
     void initGeometry() override;
     void setupAttributePointer(QOpenGLShaderProgram *program) override;
@@ -27,6 +26,10 @@ public:
 
     void drawGeometry(QOpenGLShaderProgram *program,
                       QOpenGLTexture *texture);
+
+    void drawGeometry(QOpenGLShaderProgram *program,
+                      QOpenGLFramebufferObject *fbo,
+                      bool saveToDisk);
 
     void drawGeometry(QOpenGLShaderProgram *program);
 

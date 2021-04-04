@@ -1,9 +1,9 @@
-#ifndef INHOUSE_QTOPENGL_CUBEGEOMETRY_H
-#define INHOUSE_QTOPENGL_CUBEGEOMETRY_H
+#ifndef _FLOORGEOMETRY_H
+#define _FLOORGEOMETRY_H
 
 #include <QOpenGLBuffer>
 #include <QOpenGLTexture>
-#include <QOpenGLFunctions>
+#include <QOpenGLFunctions_4_5_Core>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 
@@ -11,11 +11,10 @@
 
 class Geometry;
 
-class CubeGeometry : public Geometry
-{
+class FloorGeometry : public Geometry {
 public:
-    CubeGeometry() = default;
-    ~CubeGeometry() override = default;
+    FloorGeometry() = default;
+    ~FloorGeometry() override = default;
 
     void initGeometry() override;
     void setupAttributePointer(QOpenGLShaderProgram *program) override;
@@ -24,7 +23,6 @@ public:
                       QMatrix4x4 view,
                       QMatrix4x4 projection,
                       QOpenGLTexture *texture) override;
-
     void drawGeometry(QOpenGLShaderProgram *program,
                       QOpenGLTexture *texture);
 
@@ -37,6 +35,7 @@ protected:
 private:
     QVector<VertexData> vertices;
     QVector<GLuint> indices;
+
 };
 
 
