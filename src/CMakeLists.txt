@@ -8,4 +8,4 @@
 #add_subdirectory(8_NormalMap)
 #add_subdirectory(9_PBRLight)
 add_subdirectory(10_IBL_Irradiance)
-add_subdirectory(11_ShadowMapping)
+#add_subdirectory(11_ShadowMapping)
