@@ -101,7 +101,8 @@ void FindBlocker(out float accum_blocker_depth,
 
 float z_clip_to_eye(float z)
 {
-    return FAR * NEAR / (FAR - z * (FAR - NEAR));
+    z = z * 2.0 - 1.0;
+    return 2.0 * FAR * NEAR / (FAR + NEAR - z * (FAR - NEAR));
 }
 
 // Using similar triangles between the area light, the blocking plane and the surface point
