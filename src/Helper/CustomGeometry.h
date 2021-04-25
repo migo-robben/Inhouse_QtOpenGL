@@ -23,7 +23,11 @@ public:
     ~CustomGeometry() override = default;
 
     void initGeometry() override;
+    void initGeometry(QVector<QVector<QVector3D>> &ObjectSHCoefficient);
+
     void setupAttributePointer(QOpenGLShaderProgram *program) override;
+    void setupAttributePointer(QOpenGLShaderProgram *program, bool RPT, int bandPower2);
+
     void drawGeometry(QOpenGLShaderProgram *program,
                       QMatrix4x4 model,
                       QMatrix4x4 view,
@@ -34,6 +38,8 @@ public:
                       QMatrix4x4 model,
                       QMatrix4x4 view,
                       QMatrix4x4 projection);
+
+    void setupObjectSHCoefficient(QVector<QVector<QVector3D>> &ObjectSHCoefficient);
 
 protected:
     QVector<VertexData> getVerticesData() override;

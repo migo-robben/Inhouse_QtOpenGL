@@ -1,0 +1,5 @@
+// 生成灯光系数 -l (light) -p (probe) 3 (band level) 4096 (numbers of sampler)
+-l -p "F:\CLionProjects\Inhouse_QtOpenGL\src\13_PrecomputeRadianceTransfer\lightings\probe\stpeters_probe.hdr" 3 4096
+
+// 生成物体系数 -o (object) -d (diffuse) 1 (1 for unshadow, 2 for shadow, 3 for interreflection) 3 (band level) 4096 (numbers of sampler)
+-o -d 1 "F:\CLionProjects\Inhouse_QtOpenGL\src\13_PrecomputeRadianceTransfer\Models\buddha.obj" 3 4096

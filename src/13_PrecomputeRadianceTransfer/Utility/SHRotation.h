@@ -1,0 +1,10 @@
+#ifndef INHOUSE_QTOPENGL_PRT_SHROTATION_H
+#define INHOUSE_QTOPENGL_PRT_SHROTATION_H
+
+
+class SHRotation {
+
+};
+
+
+#endif

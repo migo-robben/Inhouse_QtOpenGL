@@ -1,0 +1,10 @@
+#ifndef INHOUSE_QTOPENGL_PRT_BOUNDINGBOX_H
+#define INHOUSE_QTOPENGL_PRT_BOUNDINGBOX_H
+
+
+class BoundingBox {
+
+};
+
+
+#endif

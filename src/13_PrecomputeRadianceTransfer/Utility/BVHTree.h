@@ -1,0 +1,10 @@
+#ifndef INHOUSE_QTOPENGL_PRT_BVHTREE_H
+#define INHOUSE_QTOPENGL_PRT_BVHTREE_H
+
+
+class BVHTree {
+
+};
+
+
+#endif

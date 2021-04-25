@@ -45,6 +45,60 @@ void CustomGeometry::setupAttributePointer(QOpenGLShaderProgram *program) {
     program->release();
 }
 
+void CustomGeometry::setupAttributePointer(QOpenGLShaderProgram *program, bool RPT, int bandPower2) {
+    QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
+
+    quintptr offset = 0;
+    // Tell OpenGL programmable pipeline how to locate vertex position data
+    int vertexLocation = program->attributeLocation("aPos");
+    program->enableAttributeArray(vertexLocation);
+    program->setAttributeBuffer(vertexLocation, GL_FLOAT, offset, 3, sizeof(VertexData));
+
+    // Offset for texture coordinate
+    offset += sizeof(QVector3D);
+
+    int coordLocation = program->attributeLocation("aCoord");
+    program->enableAttributeArray(coordLocation);
+    program->setAttributeBuffer(coordLocation, GL_FLOAT, offset, 2, sizeof(VertexData));
+
+    // Offset for normal
+    offset += sizeof(QVector2D);
+
+    int normalLocation = program->attributeLocation("aNormal");
+    program->enableAttributeArray(normalLocation);
+    program->setAttributeBuffer(normalLocation, GL_FLOAT, offset, 3, sizeof(VertexData));
+
+    // Offset for tangent
+    offset += sizeof(QVector3D);
+
+    int tangentLocation = program->attributeLocation("aTangent");
+    program->enableAttributeArray(tangentLocation);
+    program->setAttributeBuffer(tangentLocation, GL_FLOAT, offset, 3, sizeof(VertexData));
+
+    // Offset for bitangent
+    offset += sizeof(QVector3D);
+
+    int bitangentLocation = program->attributeLocation("aBitangent");
+    program->enableAttributeArray(bitangentLocation);
+    program->setAttributeBuffer(bitangentLocation, GL_FLOAT, offset, 3, sizeof(VertexData));
+
+    //
+    offset += sizeof(QVector3D);
+
+    int ObjSHCoeffLocation = program->attributeLocation("ObjectSHCoefficient");
+    for (int attrib = 0; attrib < bandPower2; attrib++) {
+        program->setAttributeBuffer(
+                ObjSHCoeffLocation + attrib,
+                GL_FLOAT,
+                offset + attrib * sizeof(QVector3D),
+                3,
+                sizeof(VertexData));
+        program->enableAttributeArray(ObjSHCoeffLocation + attrib);
+    }
+
+    program->release();
+}
+
 void CustomGeometry::initGeometry() {
     // read file via ASSIMP
     Assimp::Importer importer;
@@ -59,6 +113,33 @@ void CustomGeometry::initGeometry() {
 
     // process ASSIMP's root node recursively
     processNode(scene->mRootNode, scene);
+
+    QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
+
+    vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
+    vbo.bind();
+    vbo.allocate(getVerticesData().constData(), getVerticesData().count() * sizeof(VertexData));
+
+    ebo.setUsagePattern(QOpenGLBuffer::StaticDraw);
+    ebo.bind();
+    ebo.allocate(getIndices().constData(), getIndices().count() * sizeof(GLuint));
+}
+
+void CustomGeometry::initGeometry(QVector<QVector<QVector3D>> &ObjectSHCoefficient) {
+    // read file via ASSIMP
+    Assimp::Importer importer;
+    importer.SetPropertyInteger(AI_CONFIG_PP_PTV_NORMALIZE, true);
+    const aiScene* scene = importer.ReadFile(modelFilePath.toStdString(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_PreTransformVertices | aiProcess_JoinIdenticalVertices);
+    // check for errors
+    if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
+    {
+        qDebug() << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
+        return;
+    }
+
+    // process ASSIMP's root node recursively
+    processNode(scene->mRootNode, scene);
+    setupObjectSHCoefficient(ObjectSHCoefficient);
 
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
 
@@ -175,5 +256,17 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         // retrieve all indices of the face and store them in the indices vector
         for(unsigned int j = 0; j < face.mNumIndices; j++)
             indices.push_back(face.mIndices[j]);
+    }
+}
+
+void CustomGeometry::setupObjectSHCoefficient(QVector<QVector<QVector3D>> &ObjectSHCoefficient) {
+    int numbersOfVertices = ObjectSHCoefficient.count();
+    int bandPower2 = ObjectSHCoefficient.count() > 0 ? ObjectSHCoefficient[0].count() : 0;
+
+#pragma omp parallel for
+    for (int i = 0; i < numbersOfVertices; i++) {
+        for (int j = 0; j < bandPower2; j++) {
+            vertices[i].ObjectSHCoefficient[j] = ObjectSHCoefficient[i][j];
+        }
     }
 }

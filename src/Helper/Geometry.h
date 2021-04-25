@@ -14,6 +14,7 @@ struct VertexData
     QVector3D normal;
     QVector3D tangent;
     QVector3D bitangent;
+    QVector3D ObjectSHCoefficient[9];
 };
 
 class Geometry : protected QOpenGLFunctions_4_5_Core {
