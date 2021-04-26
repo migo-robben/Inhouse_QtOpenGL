@@ -98,7 +98,7 @@ void MainWidget::initShaders() {
 }
 
 void MainWidget::initGeometry() {
-    customGeometry = new CustomGeometry(QString("F:/CLionProjects/QtReference/src/17_qopengl_mess/PrecomputeRadianceTransfer/Models/buddha.obj"));
+    customGeometry = new CustomGeometry(QString("src/13_PrecomputeRadianceTransfer/Models/buddha.obj"));
     customGeometry->initGeometry(diffuseObj._TransferFunc);
     customGeometry->setupAttributePointer(SHADER(0), true, lightPattern.coefficient.count());
     qDebug() << "Light coefficient size: " << lightPattern.coefficient.count();
