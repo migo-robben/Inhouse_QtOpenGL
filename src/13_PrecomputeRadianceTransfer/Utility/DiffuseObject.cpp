@@ -43,9 +43,11 @@ void DiffuseObject::diffuseUnshadow(int numbersOfVertices, int band2, Sampler *s
             QVector3D sample_cartesianCoord = sampler->samples[j].cartesianCoord;
             float cosineTerm = qMax(QVector3D::dotProduct(normal, sample_cartesianCoord), 0.0f);
 
-            for (int k = 0; k < band2; k++) {
-                float SHValue = sampler->samples[j].SHValue[k];
-                _TransferFunc[i][k] += _albedo * SHValue * cosineTerm;
+            if (cosineTerm > 0.0) {
+                for (int k = 0; k < band2; k++) {
+                    float SHValue = sampler->samples[j].SHValue[k];
+                    _TransferFunc[i][k] += _albedo * SHValue * cosineTerm;
+                }
             }
         }
     }
