@@ -42,6 +42,7 @@ protected:
     void initShaders();
     void initGeometry();
     void initLightAndTransferFunction(QString lightData, QString TransferData);
+    QVector<QVector3D> rotateLightCoefficient();
 
     void glSetting();
 

@@ -58,7 +58,12 @@ void MainWidget::paintGL() {
 
     // if receive the rotate signal, then rotate light function coefficient
     if (autoRotateSwitcher) {
-        // auto rotate model
+        QVector<QVector3D> transformedLightCoefficient = rotateLightCoefficient();
+
+        SHADER(0)->setUniformValueArray(
+                "LightSHCoefficient",
+                transformedLightCoefficient.data(),
+                transformedLightCoefficient.count());
 
         phi += 1;
         update();
@@ -108,6 +113,21 @@ void MainWidget::initGeometry() {
 void MainWidget::initLightAndTransferFunction(QString lightData, QString TransferData) {
     lightPattern.readFromDisk(lightData);
     diffuseObj.readFromDisk(TransferData);
+}
+
+QVector<QVector3D> MainWidget::rotateLightCoefficient() {
+    // band
+    int band = qSqrt(lightPattern.coefficient.count());
+
+    // processing PRTColor again with rotate, theta and phi is degrees
+    QMatrix4x4 rotateMatrix; // xyz order
+    rotateMatrix.setToIdentity();
+    rotateMatrix.rotate(QQuaternion::fromAxisAndAngle(QVector3D(0.0, 1.0, 0.0), (float)phi));
+
+    QVector<QVector3D> transformedLightCoefficient;
+    transformedLightCoefficient = SHRotation::SHRotate(band, rotateMatrix, lightPattern.coefficient);
+
+    return transformedLightCoefficient;
 }
 
 void MainWidget::keyPressEvent(QKeyEvent *event) {

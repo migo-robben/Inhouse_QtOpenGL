@@ -1,4 +1,4 @@
-set(TARGET_NAME PRT_UnShadow)
+set(TARGET_NAME PRT)
 include_directories(
         "${CMAKE_CURRENT_SOURCE_DIR}/../"
         "${CMAKE_CURRENT_SOURCE_DIR}/../../"

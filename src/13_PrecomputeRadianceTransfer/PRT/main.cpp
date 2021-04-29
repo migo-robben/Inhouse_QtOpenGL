@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 
     QString LightFuncData;
     QString ObjectFuncData;
-    switch(TYPE_UNSHADOW) {
+    switch(TYPE_SHADOW) {
         case 0:
             LightFuncData = QString("stpeters_probe.dat");
             ObjectFuncData = QString("buddhaDU.dat");
