@@ -2,7 +2,8 @@ set(TARGET_NAME PRTLIB)
 include_directories(
         "${CMAKE_CURRENT_SOURCE_DIR}"
         "${ASSIMP_ROOT}/include"
-        "${STB_ROOT}")
+        "${STB_ROOT}"
+        "${EIGEN_ROOT}/include/eigen3")
 
 add_library(
         ${TARGET_NAME}

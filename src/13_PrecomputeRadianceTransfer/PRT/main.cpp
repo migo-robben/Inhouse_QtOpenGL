@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
     format.setVersion(4, 6);
     format.setProfile(QSurfaceFormat::CoreProfile);
     QSurfaceFormat::setDefaultFormat(format);
-    QApplication::setApplicationName("PRT UnShadow");
+    QApplication::setApplicationName("PRT");
 
     QString LightFuncData;
     QString ObjectFuncData;

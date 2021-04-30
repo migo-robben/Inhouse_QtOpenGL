@@ -125,7 +125,12 @@ QVector<QVector3D> MainWidget::rotateLightCoefficient() {
     rotateMatrix.rotate(QQuaternion::fromAxisAndAngle(QVector3D(0.0, 1.0, 0.0), (float)phi));
 
     QVector<QVector3D> transformedLightCoefficient;
-    transformedLightCoefficient = SHRotation::SHRotate(band, rotateMatrix, lightPattern.coefficient);
+    if (band <= 3) {
+        transformedLightCoefficient = SHRotation::FastSHRotate(band, rotateMatrix, lightPattern.coefficient);
+    }
+    else {
+        transformedLightCoefficient = SHRotation::SHRotate(band, rotateMatrix, lightPattern.coefficient);
+    }
 
     return transformedLightCoefficient;
 }

@@ -3,7 +3,8 @@ include_directories(
         "${CMAKE_CURRENT_SOURCE_DIR}/../"
         "${CMAKE_CURRENT_SOURCE_DIR}/../../"
         "${ASSIMP_ROOT}/include"
-        "${STB_ROOT}")
+        "${STB_ROOT}"
+        "${EIGEN_ROOT}/include/eigen3")
 
 add_executable(${TARGET_NAME}
         main.cpp

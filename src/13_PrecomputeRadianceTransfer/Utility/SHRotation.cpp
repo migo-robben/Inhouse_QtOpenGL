@@ -1,4 +1,5 @@
 #include "SHRotation.h"
+#include "SphericalHarmonics.h"
 
 #define SH_MAXORDER 6
 #define SH_MINORDER 2
@@ -94,6 +95,52 @@ QVector<QVector3D> SHRotation::SHRotate(
     return outLightCoefficient;
 }
 
+QVector<QVector3D> SHRotation::FastSHRotate(
+        unsigned int band,
+        QMatrix4x4 rotateMatrix,
+        QVector<QVector3D> &inLightCoefficient)
+{
+    int bandPower2 = band * band;
+
+    QVector<QVector3D> outLightCoefficient;
+    outLightCoefficient.resize(bandPower2);
+
+    Eigen::Matrix4f rMatrix = qtMatrix2EigenMatrix(rotateMatrix);
+    Eigen::Matrix3d rm33 = computeSquareMatrix_3by3(rMatrix);
+    Eigen::MatrixXd rm55 = computeSquareMatrix_5by5(rMatrix);
+
+    Eigen::Matrix3d SH3;
+    Eigen::MatrixXd SH5(5, 3);
+
+    for (int i = 1; i < 4; i++) {
+        SH3(i-1, 0) = inLightCoefficient[i].x();
+        SH3(i-1, 1) = inLightCoefficient[i].y();
+        SH3(i-1, 2) = inLightCoefficient[i].z();
+    }
+    for (int i = 4; i < 9; i++) {
+        SH5(i-4, 0) = inLightCoefficient[i].x();
+        SH5(i-4, 1) = inLightCoefficient[i].y();
+        SH5(i-4, 2) = inLightCoefficient[i].z();
+    }
+
+    Eigen::Matrix3d rSH3;
+    Eigen::MatrixXd rSH5(5, 3);
+
+    rSH3 = rm33 * SH3;
+    rSH5 = rm55 * SH5;
+
+    // Result
+    outLightCoefficient[0] = inLightCoefficient[0];
+    for (int i = 1; i < 4; i++) {
+        outLightCoefficient[i] = QVector3D(rSH3.row(i-1).x(), rSH3.row(i-1).y(), rSH3.row(i-1).z());
+    }
+    for (int i = 4; i < 9; i++) {
+        outLightCoefficient[i] = QVector3D(rSH5.row(i-4).x(), rSH5.row(i-4).y(), rSH5.row(i-4).z());
+    }
+
+    return outLightCoefficient;
+}
+
 void SHRotation::rotate_X(QVector<QVector3D> &out, unsigned int band, float a, QVector<QVector3D> &inLightCoefficient) {
     out[0] = inLightCoefficient[0];
 
@@ -179,4 +226,185 @@ void SHRotation::SHRotateZ(QVector<QVector3D> &out, unsigned int band, float ang
         out[sum + i] = -s[i - 1] * inLightCoefficient[sum - i];
         out[sum + i] += c[i - 1] * inLightCoefficient[sum + i];
     }
+}
+
+Eigen::Matrix3d SHRotation::computeSquareMatrix_3by3(Eigen::Matrix4f rotationMatrix) {
+    // 1. pick ni - {ni}
+    Eigen::Vector4f n1(1, 0, 0, 0);
+    Eigen::Vector4f n2(0, 1, 0, 0);
+    Eigen::Vector4f n3(0, 0, 1, 0);
+
+    // 2. {P(ni)} - A  A_inverse
+    double Pn1[3], Pn2[3], Pn3[3];
+
+    double theta, phi;
+    SphericalH::ToSphericalCoords(n1.x(), n1.y(), n1.z(), theta, phi);
+    Pn1[0] = SphericalH::SphericalHarmonic(theta, phi, 1, -1);
+    Pn1[1] = SphericalH::SphericalHarmonic(theta, phi, 1, 0);
+    Pn1[2] = SphericalH::SphericalHarmonic(theta, phi, 1, 1);
+
+    SphericalH::ToSphericalCoords(n2.x(), n2.y(), n2.z(), theta, phi);
+    Pn2[0] = SphericalH::SphericalHarmonic(theta, phi, 1, -1);
+    Pn2[1] = SphericalH::SphericalHarmonic(theta, phi, 1, 0);
+    Pn2[2] = SphericalH::SphericalHarmonic(theta, phi, 1, 1);
+
+    SphericalH::ToSphericalCoords(n3.x(), n3.y(), n3.z(), theta, phi);
+    Pn3[0] = SphericalH::SphericalHarmonic(theta, phi, 1, -1);
+    Pn3[1] = SphericalH::SphericalHarmonic(theta, phi, 1, 0);
+    Pn3[2] = SphericalH::SphericalHarmonic(theta, phi, 1, 1);
+
+    Eigen::Matrix3d A(3, 3);
+    A << Pn1[0], Pn1[1], Pn1[2],
+            Pn2[0], Pn2[1], Pn2[2],
+            Pn3[0], Pn3[1], Pn3[2];
+
+    // 3. use R rotate ni - {R(ni)}
+    Eigen::Vector4f Rn1 = rotationMatrix * n1;
+    Eigen::Vector4f Rn2 = rotationMatrix * n2;
+    Eigen::Vector4f Rn3 = rotationMatrix * n3;
+
+    // 4.
+    double PRn1[3], PRn2[3], PRn3[3];
+    SphericalH::ToSphericalCoords(Rn1.x(), Rn1.y(), Rn1.z(), theta, phi);
+    PRn1[0] = SphericalH::SphericalHarmonic(theta, phi, 1, -1);
+    PRn1[1] = SphericalH::SphericalHarmonic(theta, phi, 1, 0);
+    PRn1[2] = SphericalH::SphericalHarmonic(theta, phi, 1, 1);
+
+    SphericalH::ToSphericalCoords(Rn2.x(), Rn2.y(), Rn2.z(), theta, phi);
+    PRn2[0] = SphericalH::SphericalHarmonic(theta, phi, 1, -1);
+    PRn2[1] = SphericalH::SphericalHarmonic(theta, phi, 1, 0);
+    PRn2[2] = SphericalH::SphericalHarmonic(theta, phi, 1, 1);
+
+    SphericalH::ToSphericalCoords(Rn3.x(), Rn3.y(), Rn3.z(), theta, phi);
+    PRn3[0] = SphericalH::SphericalHarmonic(theta, phi, 1, -1);
+    PRn3[1] = SphericalH::SphericalHarmonic(theta, phi, 1, 0);
+    PRn3[2] = SphericalH::SphericalHarmonic(theta, phi, 1, 1);
+
+    Eigen::Matrix3d S;
+    S << PRn1[0], PRn1[1], PRn1[2],
+            PRn2[0], PRn2[1], PRn2[2],
+            PRn3[0], PRn3[1], PRn3[2];
+
+    return S * A.inverse();
+}
+
+Eigen::MatrixXd SHRotation::computeSquareMatrix_5by5(Eigen::Matrix4f rotationMatrix) {
+    // 1. pick ni - {ni}
+    float k = 1.0 / sqrt(2.0);
+    Eigen::Vector4f n1(1, 0, 0, 0);
+    Eigen::Vector4f n2(0, 0, 1, 0);
+    Eigen::Vector4f n3(k, k, 0, 0);
+    Eigen::Vector4f n4(k, 0, k, 0);
+    Eigen::Vector4f n5(0, k, k, 0);
+
+    // 2. {P(ni)} - A  A_inverse
+    double Pn1[5], Pn2[5], Pn3[5], Pn4[5], Pn5[5];
+
+    double theta, phi;
+    SphericalH::ToSphericalCoords(n1.x(), n1.y(), n1.z(), theta, phi);
+    Pn1[0] = SphericalH::SphericalHarmonic(theta, phi, 2, -2);
+    Pn1[1] = SphericalH::SphericalHarmonic(theta, phi, 2, -1);
+    Pn1[2] = SphericalH::SphericalHarmonic(theta, phi, 2, 0);
+    Pn1[3] = SphericalH::SphericalHarmonic(theta, phi, 2, 1);
+    Pn1[4] = SphericalH::SphericalHarmonic(theta, phi, 2, 2);
+
+    SphericalH::ToSphericalCoords(n2.x(), n2.y(), n2.z(), theta, phi);
+    Pn2[0] = SphericalH::SphericalHarmonic(theta, phi, 2, -2);
+    Pn2[1] = SphericalH::SphericalHarmonic(theta, phi, 2, -1);
+    Pn2[2] = SphericalH::SphericalHarmonic(theta, phi, 2, 0);
+    Pn2[3] = SphericalH::SphericalHarmonic(theta, phi, 2, 1);
+    Pn2[4] = SphericalH::SphericalHarmonic(theta, phi, 2, 2);
+
+    SphericalH::ToSphericalCoords(n3.x(), n3.y(), n3.z(), theta, phi);
+    Pn3[0] = SphericalH::SphericalHarmonic(theta, phi, 2, -2);
+    Pn3[1] = SphericalH::SphericalHarmonic(theta, phi, 2, -1);
+    Pn3[2] = SphericalH::SphericalHarmonic(theta, phi, 2, 0);
+    Pn3[3] = SphericalH::SphericalHarmonic(theta, phi, 2, 1);
+    Pn3[4] = SphericalH::SphericalHarmonic(theta, phi, 2, 2);
+
+    SphericalH::ToSphericalCoords(n4.x(), n4.y(), n4.z(), theta, phi);
+    Pn4[0] = SphericalH::SphericalHarmonic(theta, phi, 2, -2);
+    Pn4[1] = SphericalH::SphericalHarmonic(theta, phi, 2, -1);
+    Pn4[2] = SphericalH::SphericalHarmonic(theta, phi, 2, 0);
+    Pn4[3] = SphericalH::SphericalHarmonic(theta, phi, 2, 1);
+    Pn4[4] = SphericalH::SphericalHarmonic(theta, phi, 2, 2);
+
+    SphericalH::ToSphericalCoords(n5.x(), n5.y(), n5.z(), theta, phi);
+    Pn5[0] = SphericalH::SphericalHarmonic(theta, phi, 2, -2);
+    Pn5[1] = SphericalH::SphericalHarmonic(theta, phi, 2, -1);
+    Pn5[2] = SphericalH::SphericalHarmonic(theta, phi, 2, 0);
+    Pn5[3] = SphericalH::SphericalHarmonic(theta, phi, 2, 1);
+    Pn5[4] = SphericalH::SphericalHarmonic(theta, phi, 2, 2);
+
+    Eigen::MatrixXd A(5, 5);
+    A << Pn1[0], Pn1[1], Pn1[2], Pn1[3], Pn1[4],
+            Pn2[0], Pn2[1], Pn2[2], Pn2[3], Pn2[4],
+            Pn3[0], Pn3[1], Pn3[2], Pn3[3], Pn3[4],
+            Pn4[0], Pn4[1], Pn4[2], Pn4[3], Pn4[4],
+            Pn5[0], Pn5[1], Pn5[2], Pn5[3], Pn5[4];
+
+    // 3. use R rotate ni - {R(ni)}
+    Eigen::Vector4f Rn1 = rotationMatrix * n1;
+    Eigen::Vector4f Rn2 = rotationMatrix * n2;
+    Eigen::Vector4f Rn3 = rotationMatrix * n3;
+    Eigen::Vector4f Rn4 = rotationMatrix * n4;
+    Eigen::Vector4f Rn5 = rotationMatrix * n5;
+
+    // 4.
+    double PRn1[5], PRn2[5], PRn3[5], PRn4[5], PRn5[5];
+    SphericalH::ToSphericalCoords(Rn1.x(), Rn1.y(), Rn1.z(), theta, phi);
+    PRn1[0] = SphericalH::SphericalHarmonic(theta, phi, 2, -2);
+    PRn1[1] = SphericalH::SphericalHarmonic(theta, phi, 2, -1);
+    PRn1[2] = SphericalH::SphericalHarmonic(theta, phi, 2, 0);
+    PRn1[3] = SphericalH::SphericalHarmonic(theta, phi, 2, 1);
+    PRn1[4] = SphericalH::SphericalHarmonic(theta, phi, 2, 2);
+
+    SphericalH::ToSphericalCoords(Rn2.x(), Rn2.y(), Rn2.z(), theta, phi);
+    PRn2[0] = SphericalH::SphericalHarmonic(theta, phi, 2, -2);
+    PRn2[1] = SphericalH::SphericalHarmonic(theta, phi, 2, -1);
+    PRn2[2] = SphericalH::SphericalHarmonic(theta, phi, 2, 0);
+    PRn2[3] = SphericalH::SphericalHarmonic(theta, phi, 2, 1);
+    PRn2[4] = SphericalH::SphericalHarmonic(theta, phi, 2, 2);
+
+    SphericalH::ToSphericalCoords(Rn3.x(), Rn3.y(), Rn3.z(), theta, phi);
+    PRn3[0] = SphericalH::SphericalHarmonic(theta, phi, 2, -2);
+    PRn3[1] = SphericalH::SphericalHarmonic(theta, phi, 2, -1);
+    PRn3[2] = SphericalH::SphericalHarmonic(theta, phi, 2, 0);
+    PRn3[3] = SphericalH::SphericalHarmonic(theta, phi, 2, 1);
+    PRn3[4] = SphericalH::SphericalHarmonic(theta, phi, 2, 2);
+
+    SphericalH::ToSphericalCoords(Rn4.x(), Rn4.y(), Rn4.z(), theta, phi);
+    PRn4[0] = SphericalH::SphericalHarmonic(theta, phi, 2, -2);
+    PRn4[1] = SphericalH::SphericalHarmonic(theta, phi, 2, -1);
+    PRn4[2] = SphericalH::SphericalHarmonic(theta, phi, 2, 0);
+    PRn4[3] = SphericalH::SphericalHarmonic(theta, phi, 2, 1);
+    PRn4[4] = SphericalH::SphericalHarmonic(theta, phi, 2, 2);
+
+    SphericalH::ToSphericalCoords(Rn5.x(), Rn5.y(), Rn5.z(), theta, phi);
+    PRn5[0] = SphericalH::SphericalHarmonic(theta, phi, 2, -2);
+    PRn5[1] = SphericalH::SphericalHarmonic(theta, phi, 2, -1);
+    PRn5[2] = SphericalH::SphericalHarmonic(theta, phi, 2, 0);
+    PRn5[3] = SphericalH::SphericalHarmonic(theta, phi, 2, 1);
+    PRn5[4] = SphericalH::SphericalHarmonic(theta, phi, 2, 2);
+
+    Eigen::MatrixXd S(5, 5);
+    S << PRn1[0], PRn1[1], PRn1[2], PRn1[3], PRn1[4],
+            PRn2[0], PRn2[1], PRn2[2], PRn2[3], PRn2[4],
+            PRn3[0], PRn3[1], PRn3[2], PRn3[3], PRn3[4],
+            PRn4[0], PRn4[1], PRn4[2], PRn4[3], PRn4[4],
+            PRn5[0], PRn5[1], PRn5[2], PRn5[3], PRn5[4];
+
+    return S * A.inverse();
+}
+
+Eigen::Matrix4f SHRotation::qtMatrix2EigenMatrix(QMatrix4x4 qtRotationMatrix) {
+
+    Eigen::Matrix4f eRotationMatrix;
+
+    for (int i=0; i<4; i++)
+        for (int j=0; j<4; j++) {
+            eRotationMatrix.coeffRef(i, j) = qtRotationMatrix.data()[i*4+j];
+        }
+
+    return eRotationMatrix;
 }

@@ -50,6 +50,26 @@ namespace SphericalH {
 
         return result;
     }
+
+    double static Clamp(double val, double min, double max) {
+        if (val < min) {
+            val = min;
+        }
+        if (val > max) {
+            val = max;
+        }
+        return val;
+    }
+
+    QVector3D static ToVector(double theta, double phi) {
+        double r = qSin(theta);
+        return QVector3D(r * qCos(phi), r * qSin(phi), qCos(theta));
+    }
+
+    void static ToSphericalCoords(double x, double y, double z, double& theta, double& phi) {
+        theta = acos(Clamp(z, -1.0, 1.0));
+        phi = atan2(y, x);
+    }
 }
 
 #endif
