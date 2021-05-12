@@ -34,6 +34,20 @@ void SkyboxGeometry::drawGeometry(QOpenGLShaderProgram *program,
 }
 
 void SkyboxGeometry::drawGeometry(QOpenGLShaderProgram *program,
+                                  QMatrix4x4 view,
+                                  QMatrix4x4 projection) {
+
+    program->bind();
+
+    program->setUniformValue("view", view);
+    program->setUniformValue("projection", projection);
+
+    QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
+    glDrawElements(GL_TRIANGLES, VerticesCount(), GL_UNSIGNED_INT, (void*)0);
+}
+
+
+void SkyboxGeometry::drawGeometry(QOpenGLShaderProgram *program,
         QMatrix4x4 view,
         QMatrix4x4 projection,
         QOpenGLTexture *texture) {

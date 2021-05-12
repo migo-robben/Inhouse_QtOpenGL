@@ -10,4 +10,5 @@
 #add_subdirectory(10_IBL_Irradiance)
 #add_subdirectory(11_ShadowMapping)
 #add_subdirectory(12_WorldGrid)
-add_subdirectory(13_PrecomputeRadianceTransfer)
+#add_subdirectory(13_PrecomputeRadianceTransfer)
+add_subdirectory(14_IBL_Specular)

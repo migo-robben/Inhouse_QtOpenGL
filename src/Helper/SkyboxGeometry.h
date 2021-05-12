@@ -25,6 +25,9 @@ public:
                       QMatrix4x4 projection,
                       QOpenGLTexture *texture) override;
 
+    void drawGeometry(QOpenGLShaderProgram *program,
+                      QMatrix4x4 view,
+                      QMatrix4x4 projection);
 
     void drawGeometry(QOpenGLShaderProgram *program,
                       QMatrix4x4 view,
