@@ -13,3 +13,4 @@
 #add_subdirectory(13_PrecomputeRadianceTransfer)
 #add_subdirectory(14_IBL_Specular)
 add_subdirectory(15_IBL_Specular_texture)
+add_subdirectory(16_IBL_Models)
