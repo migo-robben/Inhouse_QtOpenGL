@@ -56,7 +56,7 @@ protected:
     void renderPrefilterMap(int precision);
     void renderBRDFMap(int precision);
 
-    void renderSphere(QOpenGLShaderProgram *shader, float YOffset, bool metal);
+    void renderSphere(QOpenGLShaderProgram *shader, float YOffset, bool metal, bool isComputePointLight);
 
     QOpenGLFramebufferObject* createFBOPointer(int sampleCount=0);
 
@@ -88,6 +88,7 @@ private:
     QVector<QMatrix4x4> captureViews;
 
     bool furnaceTest = false;
+    bool computePointLight = true;
 
 public slots:
     void cleanup();

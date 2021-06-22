@@ -71,11 +71,11 @@ void GLWidget::paintGL() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
-    renderSphere(SHADER(3), 5.0f, true); // Multiple Scattering
-    renderSphere(SHADER(4), 2.5f, true); // Single Scattering
+    renderSphere(SHADER(3), 5.0f, true, computePointLight); // Multiple Scattering
+    renderSphere(SHADER(4), 2.5f, true, computePointLight); // Single Scattering
 
-    renderSphere(SHADER(3), -2.5f, false); // Multiple Scattering
-    renderSphere(SHADER(4), -5.0f, false); // Single Scattering
+    renderSphere(SHADER(3), -2.5f, false, computePointLight); // Multiple Scattering
+    renderSphere(SHADER(4), -5.0f, false, computePointLight); // Single Scattering
 
     // ----- Render background ----- //
     SHADER(6)->bind();
@@ -97,13 +97,31 @@ void GLWidget::paintGL() {
 //            brdfLUTTexture);
 }
 
-void GLWidget::renderSphere(QOpenGLShaderProgram *shader, float YOffset, bool is_metal) {
+void GLWidget::renderSphere(QOpenGLShaderProgram *shader, float YOffset, bool is_metal, bool isComputePointLight) {
+    // Lights
+    QVector<QVector3D> lightPositions{
+            QVector3D(-10.0f,  10.0f, 10.0f),
+            QVector3D( 10.0f,  10.0f, 10.0f),
+            QVector3D(-10.0f, -10.0f, 10.0f),
+            QVector3D( 10.0f, -10.0f, 10.0f),
+    };
+    QVector<QVector3D> lightColors{
+            QVector3D(300.0f, 300.0f, 300.0f),
+            QVector3D(300.0f, 300.0f, 300.0f),
+            QVector3D(300.0f, 300.0f, 300.0f),
+            QVector3D(300.0f, 300.0f, 300.0f)
+    };
+
     shader->bind();
 
     shader->setUniformValue("albedo", QVector3D(1.0f, 1.0f, 1.0f));
     shader->setUniformValue("ao", 1.0f);
     shader->setUniformValue("camPos", camera->getCameraPosition());
     shader->setUniformValue("isMetal", is_metal);
+    shader->setUniformValue("computePointLight", isComputePointLight);
+
+    shader->setUniformValueArray("lightPositions", lightPositions.data(), lightPositions.size());
+    shader->setUniformValueArray("lightColors", lightColors.data(), lightColors.size());
 
     glActiveTexture(GL_TEXTURE0);
     shader->setUniformValue("irradianceMap", 0);
@@ -134,6 +152,8 @@ void GLWidget::renderSphere(QOpenGLShaderProgram *shader, float YOffset, bool is
                 camera->getCameraView(),
                 camera->getCameraProjection());
     }
+
+    shader->release();
 }
 
 void GLWidget::resizeGL(int width, int height) {
@@ -152,9 +172,9 @@ void GLWidget::resizeGL(int width, int height) {
 
 void GLWidget::initShaders() {
     // for cube box
-    if (!SHADER(0)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/19_TheKullayContyApproximation/Shaders/cubemap.vs.glsl"))
+    if (!SHADER(0)->addShaderFromSourceFile(QOpenGLShader::Vertex, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/cubemap.vs.glsl"))
         close();
-    if (!SHADER(0)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/19_TheKullayContyApproximation/Shaders/equirectangular_to_map.fs.glsl"))
+    if (!SHADER(0)->addShaderFromSourceFile(QOpenGLShader::Fragment, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/equirectangular_to_map.fs.glsl"))
         close();
     if (!SHADER(0)->link())
         close();
@@ -162,9 +182,9 @@ void GLWidget::initShaders() {
         close();
 
     // irradiance
-    if (!SHADER(1)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/19_TheKullayContyApproximation/Shaders/cubemap.vs.glsl"))
+    if (!SHADER(1)->addShaderFromSourceFile(QOpenGLShader::Vertex, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/cubemap.vs.glsl"))
         close();
-    if (!SHADER(1)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/19_TheKullayContyApproximation/Shaders/irradiance_convolution.fs.glsl"))
+    if (!SHADER(1)->addShaderFromSourceFile(QOpenGLShader::Fragment, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/irradiance_convolution.fs.glsl"))
         close();
     if (!SHADER(1)->link())
         close();
@@ -172,45 +192,45 @@ void GLWidget::initShaders() {
         close();
 
     // prefilter
-    if (!SHADER(2)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/19_TheKullayContyApproximation/Shaders/cubemap.vs.glsl"))
+    if (!SHADER(2)->addShaderFromSourceFile(QOpenGLShader::Vertex, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/cubemap.vs.glsl"))
         close();
-    if (!SHADER(2)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/19_TheKullayContyApproximation/Shaders/prefilter.fs.glsl"))
+    if (!SHADER(2)->addShaderFromSourceFile(QOpenGLShader::Fragment, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/prefilter.fs.glsl"))
         close();
     if (!SHADER(2)->link())
         close();
     if (!SHADER(2)->bind())
         close();
 
-    if (!SHADER(3)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/19_TheKullayContyApproximation/Shaders/pbr.vs.glsl"))
+    if (!SHADER(3)->addShaderFromSourceFile(QOpenGLShader::Vertex, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/pbr.vs.glsl"))
         close();
-    if (!SHADER(3)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/19_TheKullayContyApproximation/Shaders/multipleScatterPBR.fs.glsl"))
+    if (!SHADER(3)->addShaderFromSourceFile(QOpenGLShader::Fragment, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/multipleScatterPBR.fs.glsl"))
         close();
     if (!SHADER(3)->link())
         close();
     if (!SHADER(3)->bind())
         close();
 
-    if (!SHADER(4)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/19_TheKullayContyApproximation/Shaders/pbr.vs.glsl"))
+    if (!SHADER(4)->addShaderFromSourceFile(QOpenGLShader::Vertex, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/pbr.vs.glsl"))
         close();
-    if (!SHADER(4)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/19_TheKullayContyApproximation/Shaders/singleScatterPBR.fs.glsl"))
+    if (!SHADER(4)->addShaderFromSourceFile(QOpenGLShader::Fragment, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/singleScatterPBR.fs.glsl"))
         close();
     if (!SHADER(4)->link())
         close();
     if (!SHADER(4)->bind())
         close();
 
-    if (!SHADER(5)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/19_TheKullayContyApproximation/Shaders/brdf.vs.glsl"))
+    if (!SHADER(5)->addShaderFromSourceFile(QOpenGLShader::Vertex, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/brdf.vs.glsl"))
         close();
-    if (!SHADER(5)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/19_TheKullayContyApproximation/Shaders/brdf.fs.glsl"))
+    if (!SHADER(5)->addShaderFromSourceFile(QOpenGLShader::Fragment, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/brdf.fs.glsl"))
         close();
     if (!SHADER(5)->link())
         close();
     if (!SHADER(5)->bind())
         close();
 
-    if (!SHADER(6)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/19_TheKullayContyApproximation/Shaders/background.vs.glsl"))
+    if (!SHADER(6)->addShaderFromSourceFile(QOpenGLShader::Vertex, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/background.vs.glsl"))
         close();
-    if (!SHADER(6)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/19_TheKullayContyApproximation/Shaders/background.fs.glsl"))
+    if (!SHADER(6)->addShaderFromSourceFile(QOpenGLShader::Fragment, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/background.fs.glsl"))
         close();
     if (!SHADER(6)->link())
         close();
@@ -218,9 +238,9 @@ void GLWidget::initShaders() {
         close();
 
     // Debug shader
-    if (!SHADER(7)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/Shaders/ScreenPlane.vs.glsl"))
+    if (!SHADER(7)->addShaderFromSourceFile(QOpenGLShader::Vertex, "F:/CLionProjects/QtReference/src/17_qopengl_mess/Shaders/ScreenQuad.vs.glsl"))
         close();
-    if (!SHADER(7)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/Shaders/ScreenPlane.fs.glsl"))
+    if (!SHADER(7)->addShaderFromSourceFile(QOpenGLShader::Fragment, "F:/CLionProjects/QtReference/src/17_qopengl_mess/Shaders/ScreenQuad.fs.glsl"))
         close();
     if (!SHADER(7)->link())
         close();
@@ -259,9 +279,9 @@ void GLWidget::loadHDRTextrue() {
     stbi_set_flip_vertically_on_load(true);
     float *image = nullptr;
     if (furnaceTest)
-        image = stbi_loadf("src/texture/HDR/Uniform.jpg", &width, &height, &channels, 0);
+        image = stbi_loadf("F:/ClionProjects/QtReference/src/17_qopengl_mess/pbr/resource/Uniform.jpg", &width, &height, &channels, 0);
     else
-        image = stbi_loadf("src/texture/HDR/newport_loft.hdr", &width, &height, &channels, 0);
+        image = stbi_loadf("F:/ClionProjects/QtReference/src/17_qopengl_mess/pbr/resource/newport_loft.hdr", &width, &height, &channels, 0);
 
     hdrTexture = new QOpenGLTexture(QOpenGLTexture::Target2D);
     hdrTexture->create();
