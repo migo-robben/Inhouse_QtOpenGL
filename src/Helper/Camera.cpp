@@ -20,8 +20,13 @@ Camera::Camera(QVector3D pos, QVector3D up, float yaw, float pitch, QVector3D in
 }
 
 void Camera::setCameraPerspective(qreal aspect) {
+    this->cameraAspect = aspect;
     projection.setToIdentity();
     projection.perspective(fov, aspect, nearClipPlane, farClipPlane);
+}
+
+qreal Camera::getCameraAspect(){
+    return cameraAspect;
 }
 
 QMatrix4x4 Camera::getCameraProjection() {

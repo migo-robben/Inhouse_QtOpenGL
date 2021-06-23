@@ -62,6 +62,8 @@ public:
     void setCameraPerspective(qreal aspect);
     QMatrix4x4 getCameraProjection();
 
+    qreal getCameraAspect();
+
     float getDistanceFactor();
 
     QMatrix4x4 getCameraView();
@@ -90,6 +92,8 @@ private:
     QVector3D position;
 
     QVector3D LimitZoom;
+
+    qreal cameraAspect;
 
 public:
     void updateCameraVectors();

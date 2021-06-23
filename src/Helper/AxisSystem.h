@@ -16,7 +16,7 @@ struct AxisData
     QVector3D position;
 };
 
-
+class Camera;
 class AxisSystem :protected QOpenGLFunctions_4_5_Core {
 public:
     AxisSystem();
@@ -25,7 +25,8 @@ public:
     void drawGeometry(QOpenGLShaderProgram *program,
                                     QMatrix4x4 model,
                                     QMatrix4x4 view,
-                                    QMatrix4x4 projection);
+                                    QMatrix4x4 projection,
+                                    Camera* camera);
 
     void initGeometry();
     void setupAttributePointer(QOpenGLShaderProgram *program);

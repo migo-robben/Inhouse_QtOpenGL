@@ -1,4 +1,5 @@
 #include "AxisSystem.h"
+#include "Camera.h"
 
 QVector <AxisData> AxisSystem::GetAxisData() {
     QVector <AxisData> data = {
@@ -52,10 +53,22 @@ void AxisSystem::setupAttributePointer(QOpenGLShaderProgram *program) {
     program->release();
 }
 
-void AxisSystem::drawGeometry(QOpenGLShaderProgram *program, QMatrix4x4 model, QMatrix4x4 view, QMatrix4x4 projection) {
+void AxisSystem::drawGeometry(QOpenGLShaderProgram *program, QMatrix4x4 model, QMatrix4x4 view, QMatrix4x4 projection, Camera* camera) {
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
 
     program->bind();
+    model.translate(camera->getCameraAimAt());
+    model.scale(0.1);  // set axis scale
+    view.setRow(2, QVector4D(view(2, 0),
+                             view(2, 1),
+                             view(2, 2),
+                             -3.0f));  // set axis scale with camera
+
+    qreal fov = camera->getCameraFov();
+    qreal aspect = camera->getCameraAspect();
+
+    qDebug() << fov;
+    qDebug() << aspect;
 
     program->setUniformValue("model", model);
     program->setUniformValue("view", view);

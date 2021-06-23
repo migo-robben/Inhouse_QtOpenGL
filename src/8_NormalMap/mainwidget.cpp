@@ -75,11 +75,11 @@ void MainWidget::paintGL() {
     SHADER(0)->setUniformValue("SpecularMap", 2);
     SpecularMap->bind();
 
-//    uiohcfnfa->drawGeometry(
-//            SHADER(0),
-//            model,
-//            camera->getCameraView(),
-//            camera->getCameraProjection());
+    uiohcfnfa->drawGeometry(
+            SHADER(0),
+            model,
+            camera->getCameraView(),
+            camera->getCameraProjection());
 
 //    SHADER(1)->bind();
 //    uiohcfnfa->drawGeometry(
@@ -89,7 +89,8 @@ void MainWidget::paintGL() {
 //            camera->getCameraProjection(),
 //            AlbedoMap);
 
-    axisSystem->drawGeometry(SHADER(2), model, camera->getCameraView(),camera->getCameraProjection());
+    model.setToIdentity();
+    axisSystem->drawGeometry(SHADER(2), model, camera->getCameraView(),camera->getCameraProjection(), camera);
 }
 
 void MainWidget::resizeGL(int width, int height) {
