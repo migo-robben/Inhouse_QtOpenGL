@@ -14,7 +14,7 @@ MainWidget::MainWidget(QWidget *parent)
     // Create two shader program
     // the first one use for offscreen rendering
     // the second for default framebuffer rendering
-    for (int i=0; i<2; i++) {
+    for (int i=0; i<3; i++) {
         programs.push_back(new QOpenGLShaderProgram(this));
     }
 
@@ -75,11 +75,11 @@ void MainWidget::paintGL() {
     SHADER(0)->setUniformValue("SpecularMap", 2);
     SpecularMap->bind();
 
-    uiohcfnfa->drawGeometry(
-            SHADER(0),
-            model,
-            camera->getCameraView(),
-            camera->getCameraProjection());
+//    uiohcfnfa->drawGeometry(
+//            SHADER(0),
+//            model,
+//            camera->getCameraView(),
+//            camera->getCameraProjection());
 
 //    SHADER(1)->bind();
 //    uiohcfnfa->drawGeometry(
@@ -88,6 +88,8 @@ void MainWidget::paintGL() {
 //            camera->getCameraView(),
 //            camera->getCameraProjection(),
 //            AlbedoMap);
+
+    axisSystem->drawGeometry(SHADER(2), model, camera->getCameraView(),camera->getCameraProjection());
 }
 
 void MainWidget::resizeGL(int width, int height) {
@@ -116,12 +118,25 @@ void MainWidget::initShaders() {
         close();
     if (!SHADER(1)->bind())
         close();
+
+    if (!SHADER(2)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/Shaders/Axis.vs.glsl"))
+        close();
+    if (!SHADER(2)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/Shaders/Axis.fs.glsl"))
+        close();
+    if (!SHADER(2)->link())
+        close();
+    if (!SHADER(2)->bind())
+        close();
 }
 
 void MainWidget::initGeometry() {
     uiohcfnfa = new CustomGeometry(QString("src/resource/uiohcfnfa/uiohcfnfa.fbx"));
     uiohcfnfa->initGeometry();
     uiohcfnfa->setupAttributePointer(SHADER(0));
+
+    axisSystem = new AxisSystem();
+    axisSystem->initGeometry();
+    axisSystem->setupAttributePointer(SHADER(2));
 }
 
 void MainWidget::initTexture() {

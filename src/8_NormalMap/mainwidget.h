@@ -13,6 +13,7 @@
 #include <QDebug>
 
 #include "Helper/Camera.h"
+#include "Helper/AxisSystem.h"
 #include "Helper/CustomGeometry.h"
 
 
@@ -54,6 +55,8 @@ private:
     QOpenGLTexture *AlbedoMap;
     QOpenGLTexture *NormalMap;
     QOpenGLTexture *SpecularMap;
+
+    AxisSystem* axisSystem;
 
     Camera *camera;
     QMatrix4x4 model;
