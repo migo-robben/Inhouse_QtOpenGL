@@ -59,14 +59,19 @@ public:
     void setCameraFov(qreal value) { fov = value; }
     qreal getCameraFov() const { return fov; }
 
+    void setScreenSize(QSize screen_size);
+    QSize getScreenSize();
+
     void setCameraPerspective(qreal aspect);
     QMatrix4x4 getCameraProjection();
+    void setCameraPerspective(qreal aspect, int width, int height);
 
-    qreal getCameraAspect();
+    QMatrix4x4 getOrthoCamera();
 
     float getDistanceFactor();
 
     QMatrix4x4 getCameraView();
+    qreal getCameraAspect();
 
 public:
     void rollBackToInitializeStatus();
@@ -83,6 +88,7 @@ public:
 private:
     QMatrix4x4 view{};
     QMatrix4x4 projection{};
+    QMatrix4x4 projectionOrtho{};
 
     qreal nearClipPlane{};
     qreal farClipPlane{};
@@ -94,9 +100,10 @@ private:
     QVector3D LimitZoom;
 
     qreal cameraAspect;
-
+    QSize screenSize;
 public:
     void updateCameraVectors();
+
 };
 
 

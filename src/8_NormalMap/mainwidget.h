@@ -15,9 +15,11 @@
 #include "Helper/Camera.h"
 #include "Helper/AxisSystem.h"
 #include "Helper/CustomGeometry.h"
+#include "Helper/SphereGeometry.h"
 
 
 class Camera;
+class SphereGeometry;
 class CustomGeometry;
 
 class MainWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
@@ -51,6 +53,7 @@ protected:
 private:
     QList<QOpenGLShaderProgram *> programs;
 
+    SphereGeometry *sphereGeometry;
     CustomGeometry *uiohcfnfa;
     QOpenGLTexture *AlbedoMap;
     QOpenGLTexture *NormalMap;

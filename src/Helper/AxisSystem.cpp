@@ -57,22 +57,32 @@ void AxisSystem::drawGeometry(QOpenGLShaderProgram *program, QMatrix4x4 model, Q
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
 
     program->bind();
-    model.translate(camera->getCameraAimAt());
-    model.scale(0.1);  // set axis scale
+    QVector3D aim_pos = camera->getCameraAimAt();
+    QVector3D camera_pos = camera->getCameraPosition();
+    qreal length = QVector3D(camera_pos-aim_pos).length();
+    qreal fov = camera->getCameraFov();
+    QMatrix4x4 ortho = camera->getOrthoCamera();
+    qreal near_clip = camera->getCameraNearClipPlane();
+    qreal far_clip = camera->getCameraFarClipPlane();
+    qreal aspect = camera->getCameraAspect();
+    QSize screen_size = camera->getScreenSize();
+    qreal radio_x = screen_size.width() / 500.0;
+    qreal radio_y = screen_size.height() / 500.0;
+
+    qreal theta1 = qDegreesToRadians(45.0/2);
+    qreal theta2 = qDegreesToRadians(45.0*1.0/2);
+    qreal move1 = 2 / qCos(theta1) * qSin(theta1);
+    qreal move2 = 2 / qCos(theta2) * qSin(theta2);
+
+    model.translate(aim_pos);
+    model.scale(0.6);  // set axis scale
     view.setRow(2, QVector4D(view(2, 0),
                              view(2, 1),
                              view(2, 2),
                              -3.0f));  // set axis scale with camera
-
-    qreal fov = camera->getCameraFov();
-    qreal aspect = camera->getCameraAspect();
-
-    qDebug() << fov;
-    qDebug() << aspect;
-
     program->setUniformValue("model", model);
     program->setUniformValue("view", view);
-    program->setUniformValue("projection", projection);
+    program->setUniformValue("projection", ortho);
 
     program->setUniformValue("color", QVector4D(1, 0, 0, 1));
     glDrawArrays(GL_LINES, 0, 2);

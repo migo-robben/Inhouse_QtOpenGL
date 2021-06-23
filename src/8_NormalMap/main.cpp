@@ -17,6 +17,7 @@ int main(int argc, char *argv[]) {
     QApplication::setApplicationName("Load Models");
 
     MainWidget w;
+    w.setMinimumSize(120, 120);
     w.show();
 
     return QApplication::exec();

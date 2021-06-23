@@ -25,8 +25,17 @@ void Camera::setCameraPerspective(qreal aspect) {
     projection.perspective(fov, aspect, nearClipPlane, farClipPlane);
 }
 
-qreal Camera::getCameraAspect(){
-    return cameraAspect;
+void Camera::setCameraPerspective(qreal aspect, int width, int height) {
+    this->cameraAspect = aspect;
+    projection.setToIdentity();
+    projection.perspective(fov, aspect, nearClipPlane, farClipPlane);
+    projectionOrtho.setToIdentity();
+    projectionOrtho.ortho(float(width)/2, float(width)/2, float(height)/2, float(height)/2,
+                          nearClipPlane, farClipPlane);
+}
+
+QMatrix4x4 Camera::getOrthoCamera(){
+    return projectionOrtho;
 }
 
 QMatrix4x4 Camera::getCameraProjection() {
@@ -168,4 +177,16 @@ void Camera::cameraTranslateEvent(QPoint offset) {
     updateCameraVectors();
 
     updateLimitZoom();
+}
+
+qreal Camera::getCameraAspect() {
+    return cameraAspect;
+}
+
+QSize Camera::getScreenSize() {
+    return screenSize;
+}
+
+void Camera::setScreenSize(QSize screen_size) {
+    screenSize = screen_size;
 }

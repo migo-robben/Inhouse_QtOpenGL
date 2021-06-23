@@ -14,7 +14,7 @@ MainWidget::MainWidget(QWidget *parent)
     // Create two shader program
     // the first one use for offscreen rendering
     // the second for default framebuffer rendering
-    for (int i=0; i<3; i++) {
+    for (int i=0; i<4; i++) {
         programs.push_back(new QOpenGLShaderProgram(this));
     }
 
@@ -27,10 +27,11 @@ MainWidget::~MainWidget() {
 }
 
 QSize MainWidget::minimumSizeHint() const {
-    return {50, 50};
+    return {120, 120};
 }
 
 QSize MainWidget::sizeHint() const {
+    camera->setScreenSize(QSize(540, 540));
     return {540, 540};
 }
 
@@ -75,11 +76,11 @@ void MainWidget::paintGL() {
     SHADER(0)->setUniformValue("SpecularMap", 2);
     SpecularMap->bind();
 
-    uiohcfnfa->drawGeometry(
-            SHADER(0),
-            model,
-            camera->getCameraView(),
-            camera->getCameraProjection());
+//    uiohcfnfa->drawGeometry(
+//            SHADER(0),
+//            model,
+//            camera->getCameraView(),
+//            camera->getCameraProjection());
 
 //    SHADER(1)->bind();
 //    uiohcfnfa->drawGeometry(
@@ -89,15 +90,24 @@ void MainWidget::paintGL() {
 //            camera->getCameraProjection(),
 //            AlbedoMap);
 
+    QMatrix4x4 sphere_trans;
+    sphere_trans.setToIdentity();
+    sphere_trans.translate(2.5, 0, 0);
+    sphereGeometry->drawGeometry(
+            SHADER(3),model,camera->getCameraView(),camera->getCameraProjection());
+    sphereGeometry->drawGeometry(
+            SHADER(3),model*sphere_trans,camera->getCameraView(),camera->getCameraProjection());
     model.setToIdentity();
+    glViewport(-10, -10, 80, 80);
     axisSystem->drawGeometry(SHADER(2), model, camera->getCameraView(),camera->getCameraProjection(), camera);
 }
 
 void MainWidget::resizeGL(int width, int height) {
     // Calculate aspect ratio
     qreal aspect = qreal(width) / qreal(height ? height : 1);
-    camera->setCameraPerspective(aspect);
-
+    camera->setCameraPerspective(aspect, width, height);
+    QSize screen_size(width, height);
+    camera->setScreenSize(screen_size);
     return QOpenGLWidget::resizeGL(width, height);
 }
 
@@ -128,6 +138,15 @@ void MainWidget::initShaders() {
         close();
     if (!SHADER(2)->bind())
         close();
+
+    if (!SHADER(3)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/Shaders/SkySphere.vs.glsl"))
+        close();
+    if (!SHADER(3)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/Shaders/SkySphere.fs.glsl"))
+        close();
+    if (!SHADER(3)->link())
+        close();
+    if (!SHADER(3)->bind())
+        close();
 }
 
 void MainWidget::initGeometry() {
@@ -138,6 +157,10 @@ void MainWidget::initGeometry() {
     axisSystem = new AxisSystem();
     axisSystem->initGeometry();
     axisSystem->setupAttributePointer(SHADER(2));
+
+    sphereGeometry = new SphereGeometry();
+    sphereGeometry->initGeometry();
+    sphereGeometry->setupAttributePointer(SHADER(3));
 }
 
 void MainWidget::initTexture() {
@@ -263,7 +286,7 @@ void MainWidget::wheelEvent(QWheelEvent *event) {
     }
     camera->setCameraFov(fov);
     qreal aspect = qreal(width()) / qreal(height() ? height() : 1);
-    camera->setCameraPerspective(aspect);
+    camera->setCameraPerspective(aspect, width(), height());
     update();
 
     QWidget::wheelEvent(event);

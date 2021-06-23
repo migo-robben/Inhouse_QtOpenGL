@@ -3,6 +3,7 @@
 
 #include <iostream>
 
+#include <QtMath>
 #include <QOpenGLBuffer>
 #include <QOpenGLTexture>
 #include <QScopedPointer>
