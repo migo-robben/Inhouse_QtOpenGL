@@ -64,9 +64,9 @@ public:
 
     void setCameraPerspective(qreal aspect);
     QMatrix4x4 getCameraProjection();
-    void setCameraPerspective(qreal aspect, int width, int height);
+    void setCameraOrthographic(int orthographicWidth);
 
-    QMatrix4x4 getOrthoCamera();
+    QMatrix4x4 getOrthoCameraProjection();
 
     float getDistanceFactor();
 

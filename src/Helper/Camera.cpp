@@ -22,19 +22,21 @@ Camera::Camera(QVector3D pos, QVector3D up, float yaw, float pitch, QVector3D in
 void Camera::setCameraPerspective(qreal aspect) {
     this->cameraAspect = aspect;
     projection.setToIdentity();
-    projection.perspective(fov, aspect, nearClipPlane, farClipPlane);
+    projection.perspective((float)fov, (float)aspect, (float)nearClipPlane, (float)farClipPlane);
 }
 
-void Camera::setCameraPerspective(qreal aspect, int width, int height) {
-    this->cameraAspect = aspect;
-    projection.setToIdentity();
-    projection.perspective(fov, aspect, nearClipPlane, farClipPlane);
+void Camera::setCameraOrthographic(int orthographicWidth) {
     projectionOrtho.setToIdentity();
-    projectionOrtho.ortho(float(width)/2, float(width)/2, float(height)/2, float(height)/2,
-                          nearClipPlane, farClipPlane);
+    projectionOrtho.ortho(
+            -(float)orthographicWidth,
+            (float)orthographicWidth,
+            -(float)orthographicWidth,
+            (float)orthographicWidth,
+            (float)nearClipPlane,
+            (float)farClipPlane);
 }
 
-QMatrix4x4 Camera::getOrthoCamera(){
+QMatrix4x4 Camera::getOrthoCameraProjection(){
     return projectionOrtho;
 }
 

@@ -19,5 +19,6 @@ void main() {
     mat3 normalMatrix = transpose(inverse(mat3(model)));
     Normal = normalize(normalMatrix * aNormal);
 
-    gl_Position = projection * view * model * vec4(aPos, 1.0f);
+    mat4 rotView = mat4(mat3(view));
+    gl_Position = projection * rotView * model * vec4(aPos, 1.0f);
 }

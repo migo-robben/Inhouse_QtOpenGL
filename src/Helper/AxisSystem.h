@@ -21,13 +21,14 @@ class Camera;
 class AxisSystem :protected QOpenGLFunctions_4_5_Core {
 public:
     AxisSystem();
-    ~AxisSystem();
+    ~AxisSystem() override;
+
     QVector<AxisData> GetAxisData();
-    void drawGeometry(QOpenGLShaderProgram *program,
-                                    QMatrix4x4 model,
-                                    QMatrix4x4 view,
-                                    QMatrix4x4 projection,
-                                    Camera* camera);
+    void drawGeometry(
+            QOpenGLShaderProgram *program,
+            QMatrix4x4 model,
+            QMatrix4x4 view,
+            QMatrix4x4 projection);
 
     void initGeometry();
     void setupAttributePointer(QOpenGLShaderProgram *program);
@@ -36,7 +37,6 @@ private:
     QOpenGLVertexArrayObject vao;
     QOpenGLBuffer vbo;
     QOpenGLBuffer ebo;
-    QVector <AxisData> axisData;
     QMatrix4x4 mvpMatrix;
 };
 
