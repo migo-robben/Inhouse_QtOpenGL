@@ -1,5 +1,6 @@
 #include "GLWidget.h"
 #include <QKeyEvent>
+#include <cmath>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -172,9 +173,9 @@ void GLWidget::resizeGL(int width, int height) {
 
 void GLWidget::initShaders() {
     // for cube box
-    if (!SHADER(0)->addShaderFromSourceFile(QOpenGLShader::Vertex, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/cubemap.vs.glsl"))
+    if (!SHADER(0)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/19_TheKullayContyApproximation/Shaders/cubemap.vs.glsl"))
         close();
-    if (!SHADER(0)->addShaderFromSourceFile(QOpenGLShader::Fragment, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/equirectangular_to_map.fs.glsl"))
+    if (!SHADER(0)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/19_TheKullayContyApproximation/Shaders/equirectangular_to_map.fs.glsl"))
         close();
     if (!SHADER(0)->link())
         close();
@@ -182,9 +183,9 @@ void GLWidget::initShaders() {
         close();
 
     // irradiance
-    if (!SHADER(1)->addShaderFromSourceFile(QOpenGLShader::Vertex, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/cubemap.vs.glsl"))
+    if (!SHADER(1)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/19_TheKullayContyApproximation/Shaders/cubemap.vs.glsl"))
         close();
-    if (!SHADER(1)->addShaderFromSourceFile(QOpenGLShader::Fragment, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/irradiance_convolution.fs.glsl"))
+    if (!SHADER(1)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/19_TheKullayContyApproximation/Shaders/irradiance_convolution.fs.glsl"))
         close();
     if (!SHADER(1)->link())
         close();
@@ -192,45 +193,45 @@ void GLWidget::initShaders() {
         close();
 
     // prefilter
-    if (!SHADER(2)->addShaderFromSourceFile(QOpenGLShader::Vertex, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/cubemap.vs.glsl"))
+    if (!SHADER(2)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/19_TheKullayContyApproximation/Shaders/cubemap.vs.glsl"))
         close();
-    if (!SHADER(2)->addShaderFromSourceFile(QOpenGLShader::Fragment, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/prefilter.fs.glsl"))
+    if (!SHADER(2)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/19_TheKullayContyApproximation/Shaders/prefilter.fs.glsl"))
         close();
     if (!SHADER(2)->link())
         close();
     if (!SHADER(2)->bind())
         close();
 
-    if (!SHADER(3)->addShaderFromSourceFile(QOpenGLShader::Vertex, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/pbr.vs.glsl"))
+    if (!SHADER(3)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/19_TheKullayContyApproximation/Shaders/pbr.vs.glsl"))
         close();
-    if (!SHADER(3)->addShaderFromSourceFile(QOpenGLShader::Fragment, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/multipleScatterPBR.fs.glsl"))
+    if (!SHADER(3)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/19_TheKullayContyApproximation/Shaders/multipleScatterPBR.fs.glsl"))
         close();
     if (!SHADER(3)->link())
         close();
     if (!SHADER(3)->bind())
         close();
 
-    if (!SHADER(4)->addShaderFromSourceFile(QOpenGLShader::Vertex, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/pbr.vs.glsl"))
+    if (!SHADER(4)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/19_TheKullayContyApproximation/Shaders/pbr.vs.glsl"))
         close();
-    if (!SHADER(4)->addShaderFromSourceFile(QOpenGLShader::Fragment, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/singleScatterPBR.fs.glsl"))
+    if (!SHADER(4)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/19_TheKullayContyApproximation/Shaders/singleScatterPBR.fs.glsl"))
         close();
     if (!SHADER(4)->link())
         close();
     if (!SHADER(4)->bind())
         close();
 
-    if (!SHADER(5)->addShaderFromSourceFile(QOpenGLShader::Vertex, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/brdf.vs.glsl"))
+    if (!SHADER(5)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/19_TheKullayContyApproximation/Shaders/brdf.vs.glsl"))
         close();
-    if (!SHADER(5)->addShaderFromSourceFile(QOpenGLShader::Fragment, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/brdf.fs.glsl"))
+    if (!SHADER(5)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/19_TheKullayContyApproximation/Shaders/brdf.fs.glsl"))
         close();
     if (!SHADER(5)->link())
         close();
     if (!SHADER(5)->bind())
         close();
 
-    if (!SHADER(6)->addShaderFromSourceFile(QOpenGLShader::Vertex, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/background.vs.glsl"))
+    if (!SHADER(6)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/19_TheKullayContyApproximation/Shaders/background.vs.glsl"))
         close();
-    if (!SHADER(6)->addShaderFromSourceFile(QOpenGLShader::Fragment, "F:/CLionProjects/QtReference/src/17_qopengl_mess/TheKullayContyApproximation/Shaders/background.fs.glsl"))
+    if (!SHADER(6)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/19_TheKullayContyApproximation/Shaders/background.fs.glsl"))
         close();
     if (!SHADER(6)->link())
         close();
@@ -279,9 +280,9 @@ void GLWidget::loadHDRTextrue() {
     stbi_set_flip_vertically_on_load(true);
     float *image = nullptr;
     if (furnaceTest)
-        image = stbi_loadf("F:/ClionProjects/QtReference/src/17_qopengl_mess/pbr/resource/Uniform.jpg", &width, &height, &channels, 0);
+        image = stbi_loadf("src/texture/HDR/Uniform.jpg", &width, &height, &channels, 0);
     else
-        image = stbi_loadf("F:/ClionProjects/QtReference/src/17_qopengl_mess/pbr/resource/newport_loft.hdr", &width, &height, &channels, 0);
+        image = stbi_loadf("src/texture/HDR/newport_loft.hdr", &width, &height, &channels, 0);
 
     hdrTexture = new QOpenGLTexture(QOpenGLTexture::Target2D);
     hdrTexture->create();
