@@ -110,7 +110,7 @@ void GLWidget::initGeometry() {
 }
 
 void GLWidget::initTexture() {
-    diffuseTexture = new QOpenGLTexture(QImage(QString("F:/CLionProjects/QtReference/src/17_qopengl_mess/SkeletalAnimation/resource/vampire/textures/Vampire_diffuse.png")));
+    diffuseTexture = new QOpenGLTexture(QImage(QString("src/20_SkeletalAnimation/resource/vampire/textures/Vampire_diffuse.png")));
 }
 
 void GLWidget::glSetting() {
