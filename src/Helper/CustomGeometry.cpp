@@ -1,7 +1,7 @@
 #include "CustomGeometry.h"
 
 
-CustomGeometry::CustomGeometry(QString path) : modelFilePath(std::move(path)) {
+CustomGeometry::CustomGeometry(QString  path) : modelFilePath(std::move(path)) {
 }
 
 void CustomGeometry::setupAttributePointer(QOpenGLShaderProgram *program) {
@@ -41,6 +41,20 @@ void CustomGeometry::setupAttributePointer(QOpenGLShaderProgram *program) {
     int bitangentLocation = program->attributeLocation("aBitangent");
     program->enableAttributeArray(bitangentLocation);
     program->setAttributeBuffer(bitangentLocation, GL_FLOAT, offset, 3, sizeof(VertexData));
+
+    // Offset for boneIds
+    offset += sizeof(QVector3D);
+
+    int boneIdsLocation = program->attributeLocation("boneIds");
+    program->enableAttributeArray(boneIdsLocation);
+    program->setAttributeBuffer(boneIdsLocation, GL_FLOAT, offset, 4, sizeof(VertexData));
+
+    // Offset for weights
+    offset += sizeof(QVector4D);
+
+    int weightsLocation = program->attributeLocation("weights");
+    program->enableAttributeArray(weightsLocation);
+    program->setAttributeBuffer(weightsLocation, GL_FLOAT, offset, 4, sizeof(VertexData));
 
     program->release();
 }
@@ -103,7 +117,8 @@ void CustomGeometry::initGeometry() {
     // read file via ASSIMP
     Assimp::Importer importer;
     importer.SetPropertyInteger(AI_CONFIG_PP_PTV_NORMALIZE, true);
-    const aiScene* scene = importer.ReadFile(modelFilePath.toStdString(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_PreTransformVertices);
+//    const aiScene* scene = importer.ReadFile(modelFilePath.toStdString(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_PreTransformVertices | aiProcess_JoinIdenticalVertices);
+    const aiScene* scene = importer.ReadFile(modelFilePath.toStdString(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
     // check for errors
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
     {
@@ -123,6 +138,14 @@ void CustomGeometry::initGeometry() {
     ebo.setUsagePattern(QOpenGLBuffer::StaticDraw);
     ebo.bind();
     ebo.allocate(getIndices().constData(), getIndices().count() * sizeof(GLuint));
+}
+
+void CustomGeometry::initAnimation() {
+    animation = Animation(modelFilePath, this);
+}
+
+void CustomGeometry::initAnimator() {
+    animator = Animator(&animation, getBoneCount());
 }
 
 void CustomGeometry::initGeometry(QVector<QVector<QVector3D>> &ObjectSHCoefficient) {
@@ -153,10 +176,10 @@ void CustomGeometry::initGeometry(QVector<QVector<QVector3D>> &ObjectSHCoefficie
 }
 
 void CustomGeometry::drawGeometry(QOpenGLShaderProgram *program,
-                                  QMatrix4x4 model,
-                                  QMatrix4x4 view,
-                                  QMatrix4x4 projection,
-                                  QOpenGLTexture *texture) {
+                                QMatrix4x4 model,
+                                QMatrix4x4 view,
+                                QMatrix4x4 projection,
+                                QOpenGLTexture *texture) {
     program->bind();
 
     program->setUniformValue("model", model);
@@ -169,7 +192,8 @@ void CustomGeometry::drawGeometry(QOpenGLShaderProgram *program,
     glDrawElements(GL_TRIANGLES, VerticesCount(), GL_UNSIGNED_INT, (void*)0);
 }
 
-void CustomGeometry::drawGeometry(QOpenGLShaderProgram *program, QMatrix4x4 model, QMatrix4x4 view, QMatrix4x4 projection) {
+void
+CustomGeometry::drawGeometry(QOpenGLShaderProgram *program, QMatrix4x4 model, QMatrix4x4 view, QMatrix4x4 projection) {
     program->bind();
 
     program->setUniformValue("model", model);
@@ -180,6 +204,9 @@ void CustomGeometry::drawGeometry(QOpenGLShaderProgram *program, QMatrix4x4 mode
     glDrawElements(GL_TRIANGLES, VerticesCount(), GL_UNSIGNED_INT, (void*)0);
 }
 
+void CustomGeometry::drawGeometry(QOpenGLShaderProgram *program, QOpenGLTexture *texture) {
+}
+
 QVector<VertexData> CustomGeometry::getVerticesData() {
     return vertices;
 }
@@ -188,16 +215,105 @@ QVector<GLuint> CustomGeometry::getIndices() {
     return indices;
 }
 
+void CustomGeometry::setVertexBoneDataToDefault(VertexData &data) {
+//    for (int i = 0; i < MAX_BONE_WEIGHTS; i++) {
+//        data.m_BoneIDs.push_back(-1);
+//        data.m_Weights.push_back(0.0);
+//    }
+
+    data.m_BoneIDs.setX(-1);
+    data.m_BoneIDs.setY(-1);
+    data.m_BoneIDs.setZ(-1);
+    data.m_BoneIDs.setW(-1);
+
+    data.m_Weights.setX(0.0);
+    data.m_Weights.setY(0.0);
+    data.m_Weights.setZ(0.0);
+    data.m_Weights.setW(0.0);
+}
+
+void CustomGeometry::setVertexBoneData(VertexData& vertex, int boneID, float weight) {
+//    for (int i = 0; i < MAX_BONE_WEIGHTS; ++i) {
+//        if (vertex.m_BoneIDs[i] < 0) {
+//            vertex.m_BoneIDs[i] = boneID;
+//            vertex.m_Weights[i] = weight;
+//            break;
+//        }
+//    }
+//    qDebug() << "boneID " << boneID;
+    if (vertex.m_BoneIDs.x() < 0) {
+        vertex.m_BoneIDs.setX(boneID);
+        vertex.m_Weights.setX(weight);
+    } else if (vertex.m_BoneIDs.y() < 0) {
+        vertex.m_BoneIDs.setY(boneID);
+        vertex.m_Weights.setY(weight);
+    } else if (vertex.m_BoneIDs.z() < 0) {
+        vertex.m_BoneIDs.setZ(boneID);
+        vertex.m_Weights.setZ(weight);
+    } else {
+        vertex.m_BoneIDs.setW(boneID);
+        vertex.m_Weights.setW(weight);
+    }
+}
+
+QMatrix4x4 CustomGeometry::convertAIMatrixToQtFormat(const aiMatrix4x4& from) {
+    QMatrix4x4 to;
+
+    to.setRow(0, QVector4D(from.a1, from.a2, from.a3, from.a4));
+    to.setRow(1, QVector4D(from.b1, from.b2, from.b3, from.b4));
+    to.setRow(2, QVector4D(from.c1, from.c2, from.c3, from.c4));
+    to.setRow(3, QVector4D(from.d1, from.d2, from.d3, from.d4));
+
+    return to;
+}
+
+void CustomGeometry::extractBoneWeightForVertices(QVector<VertexData> &data, aiMesh* mesh, const aiScene* scene) {
+    auto& boneInfoMap = m_OffsetMatMap;
+    int& boneCount = m_BoneCount;
+
+    for (int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex)
+    {
+        int boneID = -1;
+        QString boneName(mesh->mBones[boneIndex]->mName.C_Str());
+        if (boneInfoMap.find(boneName) == boneInfoMap.end()) {
+            BoneInfo newBoneInfo;
+
+            newBoneInfo.id = boneCount;
+            newBoneInfo.offset = convertAIMatrixToQtFormat(mesh->mBones[boneIndex]->mOffsetMatrix);
+
+            boneInfoMap[boneName] = newBoneInfo;
+            boneID = boneCount;
+            boneCount++;
+        }
+        else {
+            boneID = boneInfoMap[boneName].id;
+        }
+
+        assert(boneID != -1);
+        auto weights = mesh->mBones[boneIndex]->mWeights;
+        unsigned int numWeights = mesh->mBones[boneIndex]->mNumWeights;
+        for (int weightIndex = 0; weightIndex < numWeights; ++weightIndex)
+        {
+            int vertexId = weights[weightIndex].mVertexId;
+            float weight = weights[weightIndex].mWeight;
+            assert(vertexId <= vertices.size());
+            setVertexBoneData(data[vertexId], boneID, weight);
+        }
+    }
+}
+
 void CustomGeometry::processNode(aiNode *node, const aiScene *scene) {
     // process each mesh located at the current node
-    for(unsigned int i = 0; i < node->mNumMeshes; i++) {
+    for(unsigned int i = 0; i < node->mNumMeshes; i++)
+    {
         // the node object only contains indices to index the actual objects in the scene.
         // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
         processMesh(mesh, scene);
     }
 
-    for(unsigned int i = 0; i < node->mNumChildren; i++) {
+    for(unsigned int i = 0; i < node->mNumChildren; i++)
+    {
         processNode(node->mChildren[i], scene);
     }
 }
@@ -212,6 +328,8 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         QVector3D tangent;
         QVector3D bitangent;
         VertexData data;
+
+        setVertexBoneDataToDefault(data);
 
         pos.setX(mesh->mVertices[i].x);
         pos.setY(mesh->mVertices[i].y);
@@ -257,6 +375,8 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         for(unsigned int j = 0; j < face.mNumIndices; j++)
             indices.push_back(face.mIndices[j]);
     }
+
+    extractBoneWeightForVertices(vertices, mesh, scene);
 }
 
 void CustomGeometry::setupObjectSHCoefficient(QVector<QVector<QVector3D>> &ObjectSHCoefficient) {

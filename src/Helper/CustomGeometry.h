@@ -1,6 +1,5 @@
-#ifndef INHOUSE_QTOPENGL_CUSTOMGEOMETRY_H
-#define INHOUSE_QTOPENGL_CUSTOMGEOMETRY_H
-
+#ifndef _CUSTOMGEOMETRY_H_
+#define _CUSTOMGEOMETRY_H_
 
 #include <QOpenGLBuffer>
 #include <QOpenGLTexture>
@@ -9,12 +8,19 @@
 #include <QOpenGLVertexArrayObject>
 
 #include "Helper/Geometry.h"
+#include "Helper/Bone.h"
+#include "Helper/Animation.h"
+#include "Helper/Animator.h"
 
 #include "assimp/scene.h"
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
 
+#define MAX_BONE_WEIGHTS 4
+
 class Geometry;
+class Animation;
+class Animator;
 
 class CustomGeometry : public Geometry {
 public:
@@ -23,6 +29,14 @@ public:
     ~CustomGeometry() override = default;
 
     void initGeometry() override;
+    void initAnimation();
+    void initAnimator();
+    QMap<QString, BoneInfo>& getOffsetMatMap() { return m_OffsetMatMap; }
+    int& getBoneCount() { return m_BoneCount; }
+    void extractBoneWeightForVertices(QVector<VertexData> &data, aiMesh* mesh, const aiScene* scene);
+    void setVertexBoneDataToDefault(VertexData &data);
+    QMatrix4x4 convertAIMatrixToQtFormat(const aiMatrix4x4& from);
+    void setVertexBoneData(VertexData& vertex, int boneID, float weight);
     void initGeometry(QVector<QVector<QVector3D>> &ObjectSHCoefficient);
 
     void setupAttributePointer(QOpenGLShaderProgram *program) override;
@@ -32,6 +46,8 @@ public:
                       QMatrix4x4 model,
                       QMatrix4x4 view,
                       QMatrix4x4 projection,
+                      QOpenGLTexture *texture) override;
+    void drawGeometry(QOpenGLShaderProgram *program,
                       QOpenGLTexture *texture) override;
 
     void drawGeometry(QOpenGLShaderProgram *program,
@@ -52,8 +68,16 @@ private:
     QVector<VertexData> vertices;
     QVector<GLuint> indices;
 
+    // ----- Animation ----- //
+    QMap<QString, BoneInfo> m_OffsetMatMap;
+    int m_BoneCount = 0;
+
+    QVector<QMatrix4x4> m_Transforms;
+    Animation animation;
+
 public:
     QString modelFilePath;
+    Animator animator;
 };
 
 
