@@ -17,12 +17,14 @@
 #include "Helper/SkyboxGeometry.h"
 #include "Helper/SphereGeometry.h"
 #include "Helper/RectangleGeometry.h"
+#include "Helper/CustomGeometry.h"
 
 class Camera;
 class CubeGeometry;
 class SkyboxGeometry;
 class SphereGeometry;
 class RectangleGeometry;
+class CustomGeometry;
 
 class GLWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
 Q_OBJECT
@@ -57,6 +59,7 @@ protected:
     void renderBRDFMap(int precision);
 
     void renderSphere(QOpenGLShaderProgram *shader, float YOffset, bool metal, bool isComputePointLight);
+    void renderShadingBall(QOpenGLShaderProgram *shader, float YOffset, bool isComputePointLight);
 
     QOpenGLFramebufferObject* createFBOPointer(int sampleCount=0);
 
@@ -89,10 +92,51 @@ private:
 
     bool furnaceTest = false;
     bool computePointLight = true;
+    bool environmentCompensation = true;
+    bool renderCustomGeo = true;
+
+    QString shadingBallGeoPath = "src/18_ScreenSpaceReflection/Models/ShaderBall.obj";
+    CustomGeometry *shadingBallGeo;
+
+    // albedo texture
+    QOpenGLTexture* albedo_texture;
+    QString albedoTextureFilePath = "src/texture/PBR/gold/albedo.png";
+
+    // metallic texture
+    QOpenGLTexture* metallic_texture;
+    QString metalTextureFilePath = "src/texture/PBR/gold/metallic.png";
+
+    // roughness texture
+    QOpenGLTexture* roughness_texture;
+    QString roughnessTextureFilePath = "src/texture/PBR/gold/roughness.png";
+
+    // ao texture
+    QOpenGLTexture* ao_texture;
+    QString aoTextureFilePath = "src/texture/PBR/gold/ao.png";
+
+    // normal texture
+    QOpenGLTexture* normal_texture;
+    QString normalTextureFilePath = "src/texture/PBR/gold/normal.png";
+
+    QOpenGLTexture* EavgLUT;
+    QString EavgLUTPath = "src/19_TheKullayContyApproximation/image/Eavg_LUT.png";
+
+    // Lights
+    QVector<QVector3D> lightPositions{
+            QVector3D(-10.0f,  10.0f, 10.0f),
+            QVector3D( 10.0f,  10.0f, 10.0f),
+            QVector3D(-10.0f, -10.0f, 10.0f),
+            QVector3D( 10.0f, -10.0f, 10.0f),
+    };
+    QVector<QVector3D> lightColors{
+            QVector3D(300.0f, 300.0f, 300.0f),
+            QVector3D(300.0f, 300.0f, 300.0f),
+            QVector3D(300.0f, 300.0f, 300.0f),
+            QVector3D(300.0f, 300.0f, 300.0f)
+    };
 
 public slots:
     void cleanup();
 };
-
 
 #endif
