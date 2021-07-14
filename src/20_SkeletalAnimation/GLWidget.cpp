@@ -70,10 +70,16 @@ void GLWidget::paintGL() {
 
     SHADER(0)->bind();
     SHADER(0)->setUniformValueArray("finalBonesMatrices", transforms.data(), transforms.size());
+    SHADER(0)->setUniformValue("BlendShapeWeight1", customGeometry->animator.bsWeight1);
+    SHADER(0)->setUniformValue("BlendShapeWeight2", customGeometry->animator.bsWeight2);
+    SHADER(0)->setUniformValue("BlendShapeWeight3", customGeometry->animator.bsWeight3);
+    SHADER(0)->setUniformValue("BlendShapeWeight4", customGeometry->animator.bsWeight4);
+    SHADER(0)->setUniformValue("BlendShapeNum", customGeometry->m_NumBlendShape);
 
     model.setToIdentity();
     model.translate(QVector3D(0.0, -1.0, 0.0));
-    model.scale(0.01);
+    model.scale(0.1);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     customGeometry->drawGeometry(
             SHADER(0),
             model,
@@ -102,7 +108,7 @@ void GLWidget::initShaders() {
 }
 
 void GLWidget::initGeometry() {
-    customGeometry = new CustomGeometry(QString("src/20_SkeletalAnimation/resource/vampire/dancing_vampire.fbx")); // dancing_vampire
+    customGeometry = new CustomGeometry(QString("src/20_SkeletalAnimation/resource/testBlendShape.fbx")); // dancing_vampire
     customGeometry->initGeometry();
     customGeometry->initAnimation();
     customGeometry->initAnimator();

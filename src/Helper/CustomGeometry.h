@@ -71,12 +71,16 @@ private:
     // ----- Animation ----- //
     QMap<QString, BoneInfo> m_OffsetMatMap;
     int m_BoneCount = 0;
+    int m_indexIncrease = 0;
 
     QVector<QMatrix4x4> m_Transforms;
     Animation animation;
 
 public:
     QString modelFilePath;
+    QVector<BlendShapePosition> m_blendShapeData;
+    unsigned int m_NumBlendShape;
+    unsigned int m_MaxNumBlendShape = 4;
     Animator animator;
 };
 

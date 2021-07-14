@@ -20,6 +20,7 @@ Animation::Animation(QString &animationPath, CustomGeometry* model) {
 
     readHierarchyData(m_RootNode, scene->mRootNode);
     setupBones(animation, model);
+    setupBlendShape(animation, model);
 
     qDebug() << "Duration:" << m_Duration << "," << "Fps:" << m_TicksPerSecond;
 }
@@ -67,6 +68,26 @@ void Animation::setupBones(const aiAnimation *animation, CustomGeometry* model) 
     }
 
     m_BoneInfoMap = boneInfoMap;
+}
+
+void Animation::setupBlendShape(const aiAnimation *animation, CustomGeometry *model) {
+    if(animation->mNumMorphMeshChannels){
+        auto& channel = animation->mMorphMeshChannels[0];
+        if(channel->mNumKeys){
+            for(int i=0;i<channel->mNumKeys; ++i){
+                KeyMorph morph{};
+                auto& key = channel->mKeys[i];
+                morph.m_NumValuesAndWeights = key.mNumValuesAndWeights;
+                morph.m_Time = key.mTime;
+                morph.m_Weights = new double[key.mNumValuesAndWeights];
+                morph.m_Values = new unsigned int[key.mNumValuesAndWeights];
+                // the length of same with mNumAnimMesh or mNumValuesAndWeights?
+                std::copy(key.mWeights, key.mWeights+key.mNumValuesAndWeights, morph.m_Weights);
+                std::copy(key.mValues, key.mValues+key.mNumValuesAndWeights, morph.m_Values);
+                m_keyMorph.push_back(morph);
+            }
+        }
+    }
 }
 
 Bone *Animation::FindBone(const QString &name) {

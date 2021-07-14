@@ -42,6 +42,17 @@ void CustomGeometry::setupAttributePointer(QOpenGLShaderProgram *program) {
     program->enableAttributeArray(bitangentLocation);
     program->setAttributeBuffer(bitangentLocation, GL_FLOAT, offset, 3, sizeof(VertexData));
 
+    // Offset for BlendShape
+    unsigned int leftNumBlendShape = m_MaxNumBlendShape - m_NumBlendShape;
+    for(int i=1;i <= m_NumBlendShape; i++){
+        offset += sizeof(QVector3D);
+        QString bsNum = QString("BlendShape") + QString::number(i);
+        int bsLocation = program->attributeLocation(bsNum);
+        program->enableAttributeArray(bsLocation);
+        program->setAttributeBuffer(bsLocation, GL_FLOAT, offset, 3, sizeof(VertexData));
+    }
+    offset += sizeof(QVector3D) * leftNumBlendShape;
+
     // Offset for boneIds
     offset += sizeof(QVector3D);
 
@@ -126,6 +137,8 @@ void CustomGeometry::initGeometry() {
         return;
     }
 
+    m_indexIncrease = 0;
+
     // process ASSIMP's root node recursively
     processNode(scene->mRootNode, scene);
 
@@ -145,7 +158,7 @@ void CustomGeometry::initAnimation() {
 }
 
 void CustomGeometry::initAnimator() {
-    animator = Animator(&animation, getBoneCount());
+    animator = Animator(&animation, this, getBoneCount());
 }
 
 void CustomGeometry::initGeometry(QVector<QVector<QVector3D>> &ObjectSHCoefficient) {
@@ -327,6 +340,7 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         QVector3D normal;
         QVector3D tangent;
         QVector3D bitangent;
+        QVector3D bsPos;
         VertexData data;
 
         setVertexBoneDataToDefault(data);
@@ -334,6 +348,8 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         pos.setX(mesh->mVertices[i].x);
         pos.setY(mesh->mVertices[i].y);
         pos.setZ(mesh->mVertices[i].z);
+
+        bsPos = pos;
 
         if (mesh->mTextureCoords[0]) {
             tex.setX(mesh->mTextureCoords[0][i].x);
@@ -364,6 +380,35 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         data.tangent = tangent;
         data.bitangent = bitangent;
 
+        // blendShape
+        BlendShapePosition bsp;
+        bsp.m_numAnimPos = mesh->mNumAnimMeshes;
+        m_NumBlendShape = bsp.m_numAnimPos;
+        if(mesh->mNumAnimMeshes){
+            for(unsigned int b=0; b<mesh->mNumAnimMeshes;++b){
+                QVector3D b_pos;
+                aiVector3D b_ver = mesh->mAnimMeshes[b]->mVertices[i];
+                b_pos.setX(b_ver.x);
+                b_pos.setY(b_ver.y);
+                b_pos.setZ(b_ver.z);
+                bsp.m_AnimPos.push_back(b_pos);
+                if(b==0){
+                    data.m_BlendShape1 = b_pos-pos;
+                }
+                if(b==1){
+                    data.m_BlendShape2 = b_pos-pos;
+                }
+                if(b==2){
+                    data.m_BlendShape3 = b_pos-pos;
+                }
+                if(b==3){
+                    data.m_BlendShape4 = b_pos-pos;
+                }
+            }
+        }
+        assert(bsp.m_numAnimPos == bsp.m_AnimPos.length());
+        m_blendShapeData.push_back(bsp);
+
         vertices.push_back(data);
     }
 
@@ -373,8 +418,10 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         aiFace face = mesh->mFaces[i];
         // retrieve all indices of the face and store them in the indices vector
         for(unsigned int j = 0; j < face.mNumIndices; j++)
-            indices.push_back(face.mIndices[j]);
+            indices.push_back(face.mIndices[j] + m_indexIncrease);
     }
+
+    m_indexIncrease += mesh->mNumVertices;
 
     extractBoneWeightForVertices(vertices, mesh, scene);
 }

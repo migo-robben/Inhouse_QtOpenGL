@@ -7,6 +7,7 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 
+
 struct VertexData
 {
     QVector3D position;
@@ -14,10 +15,21 @@ struct VertexData
     QVector3D normal;
     QVector3D tangent;
     QVector3D bitangent;
+    QVector3D m_BlendShape1;
+    QVector3D m_BlendShape2;
+    QVector3D m_BlendShape3;
+    QVector3D m_BlendShape4;
     QVector4D m_BoneIDs;
     QVector4D m_Weights;
     QVector3D ObjectSHCoefficient[9];
 };
+
+
+struct BlendShapePosition{
+    unsigned int m_numAnimPos = 0;
+    QVector<QVector3D> m_AnimPos;
+};
+
 
 class Geometry : protected QOpenGLFunctions_4_5_Core {
 public:
