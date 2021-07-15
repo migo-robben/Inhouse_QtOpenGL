@@ -2,18 +2,22 @@
 #include <QKeyEvent>
 #include <QTimer>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 #define SHADER(x) programs[x]
 
 GLWidget::GLWidget(QWidget *parent)
         : QOpenGLWidget(parent),
           customGeometry(nullptr),
           camera(nullptr),
-          diffuseTexture(nullptr) {
+          diffuseTexture(nullptr),
+          pbo(QOpenGLBuffer::PixelPackBuffer){
 
     // Create two shader program
     // the first one use for offscreen rendering
     // the second for default framebuffer rendering
-    for (int i=0; i<1; i++) {
+    for (int i=0; i<2; i++) {
         programs.push_back(new QOpenGLShaderProgram(this));
     }
 
@@ -51,6 +55,8 @@ void GLWidget::initializeGL() {
     glSetting();
     initGeometry();
 
+    createBlendShapeTexBuffer();
+
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &GLWidget::updateFrame);
     timer->start(33);
@@ -76,6 +82,11 @@ void GLWidget::paintGL() {
     SHADER(0)->setUniformValue("BlendShapeWeight4", customGeometry->animator.bsWeight4);
     SHADER(0)->setUniformValue("BlendShapeNum", customGeometry->m_NumBlendShape);
 
+//    pbo.bind();
+//    glActiveTexture(GL_TEXTURE0);
+//    SHADER(0)->setUniformValue("blendShapeMap1", 0);
+//    blendShapeTexture->bind();
+
     model.setToIdentity();
     model.translate(QVector3D(0.0, -1.0, 0.0));
     model.scale(0.1);
@@ -86,6 +97,41 @@ void GLWidget::paintGL() {
             camera->getCameraView(),
             camera->getCameraProjection(),
             diffuseTexture);
+}
+
+void GLWidget::createBlendShapeTexBuffer() {
+//    int width, height, channels;
+//    stbi_set_flip_vertically_on_load(true);
+//    float *image = stbi_loadf("src/20_SkeletalAnimation/resource/vampire/textures/Pure.png", &width, &height, &channels, 0);
+
+//    blendShapeTexture = new QOpenGLTexture(QOpenGLTexture::Target2D);
+//    blendShapeTexture->setSize(512, 1);
+//    blendShapeTexture->setFormat(QOpenGLTexture::RGB32F);
+//    blendShapeTexture->create();
+//    blendShapeTexture->bind();
+//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, 512, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+//    pbo.create();
+//    pbo.bind();
+//    QVector<float> data;
+//    for (int i = 0; i < 512 * 1; i++)
+//    {
+//        data.append(255);  // R
+//        data.append(0);  // G
+//        data.append(0);    // B
+//        data.append(255);  // A
+//    }
+//    data.resize(512);
+//    data.fill(0.5);
+//    pbo.setUsagePattern(QOpenGLBuffer::DynamicDraw);
+//    pbo.allocate(data.constData(), data.count() * sizeof(GLubyte));
+//    m_pixelData = (GLubyte*) pbo.map(QOpenGLBuffer::WriteOnly);
+
+//    blendShapeTexture->setData(0, 0, QOpenGLTexture::RGB, QOpenGLTexture::Float32, data.data());
+//    blendShapeTexture->setWrapMode(QOpenGLTexture::ClampToEdge);
+//    blendShapeTexture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+//    blendShapeTexture->setMagnificationFilter(QOpenGLTexture::LinearMipMapLinear);
+
+//    stbi_image_free(image);
 }
 
 void GLWidget::resizeGL(int width, int height) {
@@ -105,6 +151,14 @@ void GLWidget::initShaders() {
         close();
     if (!SHADER(0)->bind())
         close();
+    if (!SHADER(1)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/20_SkeletalAnimation/shaders/blendShape.vs.glsl"))
+        close();
+    if (!SHADER(1)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/20_SkeletalAnimation/shaders/blendShape.fs.glsl"))
+        close();
+    if (!SHADER(1)->link())
+        close();
+    if (!SHADER(1)->bind())
+        close();
 }
 
 void GLWidget::initGeometry() {
@@ -116,7 +170,7 @@ void GLWidget::initGeometry() {
 }
 
 void GLWidget::initTexture() {
-    diffuseTexture = new QOpenGLTexture(QImage(QString("src/20_SkeletalAnimation/resource/vampire/textures/Vampire_diffuse.png")));
+    diffuseTexture = new QOpenGLTexture(QImage(QString("src/20_SkeletalAnimation/resource/vampire/textures/Pure.png")));
 }
 
 void GLWidget::glSetting() {

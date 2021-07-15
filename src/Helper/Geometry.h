@@ -15,14 +15,14 @@ struct VertexData
     QVector3D normal;
     QVector3D tangent;
     QVector3D bitangent;
-    QVector3D m_BlendShape1;
-    QVector3D m_BlendShape2;
-    QVector3D m_BlendShape3;
-    QVector3D m_BlendShape4;
-    QVector3D m_BlendShapeNormal1;
-    QVector3D m_BlendShapeNormal2;
-    QVector3D m_BlendShapeNormal3;
-    QVector3D m_BlendShapeNormal4;
+    QVector3D m_BlendShapeDeltaPos1;
+    QVector3D m_BlendShapeDeltaPos2;
+    QVector3D m_BlendShapeDeltaPos3;
+    QVector3D m_BlendShapeDeltaPos4;
+    QVector3D m_BlendShapeDeltaNormal1;
+    QVector3D m_BlendShapeDeltaNormal2;
+    QVector3D m_BlendShapeDeltaNormal3;
+    QVector3D m_BlendShapeDeltaNormal4;
     QVector4D m_BoneIDs;
     QVector4D m_Weights;
     QVector3D ObjectSHCoefficient[9];
@@ -31,7 +31,8 @@ struct VertexData
 
 struct BlendShapePosition{
     unsigned int m_numAnimPos = 0;
-    QVector<QVector3D> m_AnimPos;
+    QVector<QVector3D> m_AnimDeltaPos;
+    QVector<QVector3D> m_AnimDeltaNor;
 };
 
 

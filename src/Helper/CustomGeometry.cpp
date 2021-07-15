@@ -46,7 +46,7 @@ void CustomGeometry::setupAttributePointer(QOpenGLShaderProgram *program) {
     unsigned int leftNumBlendShape = m_MaxNumBlendShape - m_NumBlendShape;
     for(int i=1;i <= m_NumBlendShape; i++){
         offset += sizeof(QVector3D);
-        QString bsNum = QString("BlendShape") + QString::number(i);
+        QString bsNum = QString("BlendShapeDeltaPos") + QString::number(i);
         int bsLocation = program->attributeLocation(bsNum);
         program->enableAttributeArray(bsLocation);
         program->setAttributeBuffer(bsLocation, GL_FLOAT, offset, 3, sizeof(VertexData));
@@ -56,7 +56,7 @@ void CustomGeometry::setupAttributePointer(QOpenGLShaderProgram *program) {
     // Offset BlendShape Normal
     for(int i=1;i <= m_NumBlendShape; i++){
         offset += sizeof(QVector3D);
-        QString bsNum = QString("BlendShapeNormal") + QString::number(i);
+        QString bsNum = QString("BlendShapeDeltaNormal") + QString::number(i);
         int bsLocation = program->attributeLocation(bsNum);
         program->enableAttributeArray(bsLocation);
         program->setAttributeBuffer(bsLocation, GL_FLOAT, offset, 3, sizeof(VertexData));
@@ -407,26 +407,27 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
                 b_nor.setX(b_nml.x);
                 b_nor.setY(b_nml.y);
                 b_nor.setZ(b_nml.z);
-                bsp.m_AnimPos.push_back(b_pos);
+                bsp.m_AnimDeltaPos.push_back(b_pos - pos);
+                bsp.m_AnimDeltaNor.push_back(b_nor - normal);
                 if(b==0){
-                    data.m_BlendShape1 = b_pos-pos;
-                    data.m_BlendShapeNormal1 = b_nor-normal;
+                    data.m_BlendShapeDeltaPos1 = b_pos - pos;
+                    data.m_BlendShapeDeltaNormal1 = b_nor-normal;
                 }
                 if(b==1){
-                    data.m_BlendShape2 = b_pos-pos;
-                    data.m_BlendShapeNormal2 = b_nor-normal;
+                    data.m_BlendShapeDeltaPos2 = b_pos - pos;
+                    data.m_BlendShapeDeltaNormal2 = b_nor-normal;
                 }
                 if(b==2){
-                    data.m_BlendShape3 = b_pos-pos;
-                    data.m_BlendShapeNormal3 = b_nor-normal;
+                    data.m_BlendShapeDeltaPos3 = b_pos-pos;
+                    data.m_BlendShapeDeltaNormal3 = b_nor-normal;
                 }
                 if(b==3){
-                    data.m_BlendShape4 = b_pos-pos;
-                    data.m_BlendShapeNormal4 = b_nor-normal;
+                    data.m_BlendShapeDeltaPos4 = b_pos-pos;
+                    data.m_BlendShapeDeltaNormal4 = b_nor-normal;
                 }
             }
         }
-        assert(bsp.m_numAnimPos == bsp.m_AnimPos.length());
+        assert(bsp.m_numAnimPos == bsp.m_AnimDeltaPos.length());
         m_blendShapeData.push_back(bsp);
 
         vertices.push_back(data);
