@@ -44,6 +44,9 @@ void Animator::calculateBoneTransform(const AssimpNodeData *node, QMatrix4x4 par
 }
 
 void Animator::calculateBlendShapePosition(QVector<KeyMorph> km ) {
+    if(km.empty())
+        return;
+
     int bsIndex0 = int(m_CurrentFrame);
     int bsIndex1 = int(m_CurrentFrame)+1;
 
@@ -61,5 +64,5 @@ void Animator::calculateBlendShapePosition(QVector<KeyMorph> km ) {
         if(i==3)
             bsWeight4 = km[bsIndex0].m_Weights[3];
     }
-    qDebug() << bsWeight1 << bsWeight2 << bsWeight3 << bsWeight4;
+//    qDebug() << bsWeight1 << bsWeight2 << bsWeight3 << bsWeight4;
 }

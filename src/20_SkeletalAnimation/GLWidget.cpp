@@ -79,7 +79,7 @@ void GLWidget::paintGL() {
     model.setToIdentity();
     model.translate(QVector3D(0.0, -1.0, 0.0));
     model.scale(0.1);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     customGeometry->drawGeometry(
             SHADER(0),
             model,

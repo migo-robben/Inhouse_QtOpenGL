@@ -11,6 +11,10 @@ layout (location = 7) in vec3 BlendShape1;
 layout (location = 8) in vec3 BlendShape2;
 layout (location = 9) in vec3 BlendShape3;
 layout (location = 10) in vec3 BlendShape4;
+layout (location = 11) in vec3 BlendShapeNormal1;
+layout (location = 12) in vec3 BlendShapeNormal2;
+layout (location = 13) in vec3 BlendShapeNormal3;
+layout (location = 14) in vec3 BlendShapeNormal4;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -26,44 +30,38 @@ uniform float BlendShapeWeight4;
 uniform int BlendShapeNum;
 
 out vec2 coord;
+out vec3 WorldPos;
+out vec3 Normal;
 
 void main() {
     ivec4 BoneIds = ivec4(int(boneIds.x), int(boneIds.y), int(boneIds.z), int(boneIds.w));
 
     vec4 totalPosition = vec4(0.0f);
+    vec3 localNormal = vec3(0.0f);
     vec3 newPos = aPos;
+    vec3 newNor = aNormal;
 
-    float totalWeight = 0.0;
+    // compute blendshape influence
     for(int i = 0; i < BlendShapeNum; i++){
         if(i == 0){
-            totalWeight += BlendShapeWeight1;
+            newPos += BlendShape1 * BlendShapeWeight1;
+            newNor += BlendShapeNormal1 * BlendShapeWeight1;
         }
         if(i == 1){
-            totalWeight += BlendShapeWeight2;
+            newPos += BlendShape2 * BlendShapeWeight2;
+            newNor += BlendShapeNormal2 * BlendShapeWeight2;
         }
         if(i == 2){
-            totalWeight += BlendShapeWeight3;
+            newPos += BlendShape3 * BlendShapeWeight3;
+            newNor += BlendShapeNormal3 * BlendShapeWeight3;
         }
         if(i == 3){
-            totalWeight += BlendShapeWeight4;
+            newPos += BlendShape4 * BlendShapeWeight4;
+            newNor += BlendShapeNormal4 * BlendShapeWeight4;
         }
     }
 
-    for(int i = 0; i < BlendShapeNum; i++){
-        if(i == 0){
-            newPos += BlendShape1 * (BlendShapeWeight1 / totalWeight);
-        }
-        if(i == 1){
-            newPos += BlendShape2 * (BlendShapeWeight2 / totalWeight);
-        }
-        if(i == 2){
-            newPos += BlendShape3 * (BlendShapeWeight3 / totalWeight);
-        }
-        if(i == 3){
-            newPos += BlendShape4 * (BlendShapeWeight4 / totalWeight);
-        }
-    }
-
+    // compute bone influence
     for(int i = 0 ; i < MAX_BONE_INFLUENCE ; i++)
     {
         if(BoneIds[i] == -1) {
@@ -74,13 +72,18 @@ void main() {
             totalPosition = vec4(newPos, 1.0);
             break;
         }
-        vec4 localPosition_O = finalBonesMatrices[BoneIds[i]] * vec4(newPos, 1.0f);
+        vec4 localPosition = finalBonesMatrices[BoneIds[i]] * vec4(newPos, 1.0f);
 
-        totalPosition += localPosition_O * weights[i];
+        totalPosition += localPosition * weights[i];
 
-        // TODO bs normal
-        vec3 localNormal = mat3(finalBonesMatrices[BoneIds[i]]) * aNormal;
+        localNormal += mat3(finalBonesMatrices[BoneIds[i]]) * newNor * weights[i];
     }
+
+    mat3 normalMatrix = transpose(inverse(mat3(model)));
+    Normal = normalize(normalMatrix * localNormal);
+
+    // compute world pos
+    WorldPos = vec3(model * totalPosition);
 
     gl_Position =  projection * view * model * (totalPosition);
 

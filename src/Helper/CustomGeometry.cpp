@@ -53,6 +53,16 @@ void CustomGeometry::setupAttributePointer(QOpenGLShaderProgram *program) {
     }
     offset += sizeof(QVector3D) * leftNumBlendShape;
 
+    // Offset BlendShape Normal
+    for(int i=1;i <= m_NumBlendShape; i++){
+        offset += sizeof(QVector3D);
+        QString bsNum = QString("BlendShapeNormal") + QString::number(i);
+        int bsLocation = program->attributeLocation(bsNum);
+        program->enableAttributeArray(bsLocation);
+        program->setAttributeBuffer(bsLocation, GL_FLOAT, offset, 3, sizeof(VertexData));
+    }
+    offset += sizeof(QVector3D) * leftNumBlendShape;
+
     // Offset for boneIds
     offset += sizeof(QVector3D);
 
@@ -141,6 +151,8 @@ void CustomGeometry::initGeometry() {
 
     // process ASSIMP's root node recursively
     processNode(scene->mRootNode, scene);
+
+    qDebug() << "BlendShape Num: " << m_NumBlendShape;
 
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
 
@@ -386,23 +398,31 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         m_NumBlendShape = bsp.m_numAnimPos;
         if(mesh->mNumAnimMeshes){
             for(unsigned int b=0; b<mesh->mNumAnimMeshes;++b){
-                QVector3D b_pos;
+                QVector3D b_pos, b_nor;
                 aiVector3D b_ver = mesh->mAnimMeshes[b]->mVertices[i];
+                aiVector3D b_nml = mesh->mAnimMeshes[b]->mNormals[i];
                 b_pos.setX(b_ver.x);
                 b_pos.setY(b_ver.y);
                 b_pos.setZ(b_ver.z);
+                b_nor.setX(b_nml.x);
+                b_nor.setY(b_nml.y);
+                b_nor.setZ(b_nml.z);
                 bsp.m_AnimPos.push_back(b_pos);
                 if(b==0){
                     data.m_BlendShape1 = b_pos-pos;
+                    data.m_BlendShapeNormal1 = b_nor-normal;
                 }
                 if(b==1){
                     data.m_BlendShape2 = b_pos-pos;
+                    data.m_BlendShapeNormal2 = b_nor-normal;
                 }
                 if(b==2){
                     data.m_BlendShape3 = b_pos-pos;
+                    data.m_BlendShapeNormal3 = b_nor-normal;
                 }
                 if(b==3){
                     data.m_BlendShape4 = b_pos-pos;
+                    data.m_BlendShapeNormal4 = b_nor-normal;
                 }
             }
         }
