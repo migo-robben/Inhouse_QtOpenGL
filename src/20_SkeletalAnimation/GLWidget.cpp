@@ -54,7 +54,7 @@ void GLWidget::initializeGL() {
     glSetting();
     initGeometry();
 
-    createBlendShapeTexBuffer();
+    createBlendShapeTex();
 
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &GLWidget::updateFrame);
@@ -94,27 +94,23 @@ void GLWidget::paintGL() {
             SHADER(0),
             model,
             camera->getCameraView(),
-            camera->getCameraProjection(),
-            diffuseTexture);
+            camera->getCameraProjection());
 }
 
-void GLWidget::createBlendShapeTexBuffer() {
-    int width, height, channels;
-    stbi_set_flip_vertically_on_load(true);
-    float *image = stbi_loadf("src/20_SkeletalAnimation/resource/vampire/textures/Pure.png", &width, &height, &channels, 0);
+void GLWidget::createBlendShapeTex() {
+    int lengthBSD = customGeometry->m_blendShapeData.length();
 
     blendShapeTexture = new QOpenGLTexture(QOpenGLTexture::Target2D);
     blendShapeTexture->create();
-    blendShapeTexture->setSize(width, height, channels);
-    blendShapeTexture->setFormat(QOpenGLTexture::RGB32F);
-    blendShapeTexture->allocateStorage();
-
-    blendShapeTexture->setData(0,0,QOpenGLTexture::RGB,QOpenGLTexture::Float32, image,Q_NULLPTR);
-    blendShapeTexture->setWrapMode(QOpenGLTexture::ClampToEdge);
-    blendShapeTexture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
-    blendShapeTexture->setMagnificationFilter(QOpenGLTexture::LinearMipMapLinear);
-
-    stbi_image_free(image);
+    blendShapeTexture->setFormat(QOpenGLTexture::RGBA32F);
+    blendShapeTexture->setSize(precision, precision, 3);
+    blendShapeTexture->allocateStorage(QOpenGLTexture::RGBA, QOpenGLTexture::Float32);
+    QVector<QVector4D> a;
+    for(int i=0;i<precision*precision;i++){
+        QVector4D tmp(1.0, 0.0, 0.0, 1.0);
+        a.append(tmp);
+    }
+    blendShapeTexture->setData(0, QOpenGLTexture::RGBA,QOpenGLTexture::Float32, a.constData());
 }
 
 void GLWidget::resizeGL(int width, int height) {

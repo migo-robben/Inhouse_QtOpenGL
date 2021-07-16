@@ -43,9 +43,9 @@ protected:
 
     void glSetting();
 
-    int precision = 1024;
+    int precision = 64;
     QOpenGLTexture *blendShapeTexture;
-    void createBlendShapeTexBuffer();
+    void createBlendShapeTex();
 
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
