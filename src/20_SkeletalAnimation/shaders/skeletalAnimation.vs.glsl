@@ -29,21 +29,30 @@ uniform float BlendShapeWeight3;
 uniform float BlendShapeWeight4;
 uniform int BlendShapeNum;
 
-uniform samplerBuffer blendShapeMap1;
-uniform samplerBuffer blendShapeData1;
+uniform sampler2D blendShapeMap1;
+uniform sampler2D HeightMap1;
 
 out vec2 coord;
 out vec3 WorldPos;
 out vec3 Normal;
+out vec3 DebugColor;
 
 void main() {
-    ivec4 BoneIds = ivec4(int(boneIds.x), int(boneIds.y), int(boneIds.z), int(boneIds.w));
+    coord = aCoord;
 
-//    vec2 uv = vec2(coord.x, coord.y);
-//    ivec2 texSize = textureSize(blendShapeMap1, 0);
-//    ivec2 texCoord = ivec2(uv * texSize);
-//    vec4 bsMap = texture(blendShapeMap1, coord);
-    vec4 bsMap = texelFetch(blendShapeMap1, gl_VertexID);
+    ivec4 BoneIds = ivec4(int(boneIds.x), int(boneIds.y), int(boneIds.z), int(boneIds.w));
+    vec4 BlendShapeMap = vec4(0.0);
+    float bias = 0.25;
+    float height = 0.0;
+    float scale = 0.0;
+
+    height = scale * ((texture2D(HeightMap1, aCoord).r) - bias);
+    vec3 hnormal = vec3(aNormal.x*height, aNormal.y*height, aNormal.z*height);
+
+    vec2 uv = vec2(aCoord.x, aCoord.y);
+    ivec2 texSize = textureSize(blendShapeMap1, 0);
+    ivec2 texCoord = ivec2(uv * texSize);
+    BlendShapeMap = texelFetch(blendShapeMap1, texCoord, 0);
 
     vec4 totalPosition = vec4(0.0f);
     vec3 localNormal = vec3(0.0f);
@@ -92,9 +101,8 @@ void main() {
     Normal = normalize(normalMatrix * localNormal);
 
     // compute world pos
-    WorldPos = vec3(model * totalPosition);
+    vec4 finalPos = totalPosition + vec4(hnormal.xyz, 0.0) + BlendShapeMap;
+    WorldPos = vec3(model * finalPos);
 
-    gl_Position =  projection * view * model * (totalPosition+100*vec4(bsMap.xyz, 0.0));
-
-    coord = aCoord;
+    gl_Position =  projection * view * model * finalPos;
 }

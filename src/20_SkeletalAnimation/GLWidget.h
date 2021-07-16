@@ -10,6 +10,7 @@
 #include <QOpenGLFunctions_4_5_Core>
 #include <QOpenGLFramebufferObjectFormat>
 #include <QElapsedTimer>
+#include <QOpenGLDebugLogger>
 
 #include <QDebug>
 
@@ -43,7 +44,6 @@ protected:
     void glSetting();
 
     int precision = 1024;
-    QOpenGLBuffer pbo;
     QOpenGLTexture *blendShapeTexture;
     void createBlendShapeTexBuffer();
 
