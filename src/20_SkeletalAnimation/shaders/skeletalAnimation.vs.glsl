@@ -23,16 +23,25 @@ uniform mat4 projection;
 const int MAX_BONES = 100;
 const int MAX_BONE_INFLUENCE = 4;
 uniform mat4 finalBonesMatrices[MAX_BONES];
+
 uniform float BlendShapeWeight1;
 uniform float BlendShapeWeight2;
 uniform float BlendShapeWeight3;
 uniform float BlendShapeWeight4;
+
 uniform int BlendShapeNum;
+uniform int iScaleFactor;
 
 uniform sampler2D blendShapeMap1;
 uniform sampler2D blendShapeMap2;
 uniform sampler2D blendShapeMap3;
 uniform sampler2D blendShapeMap4;
+uniform sampler2D blendShapeMap5;
+uniform sampler2D blendShapeMap6;
+uniform sampler2D blendShapeMap7;
+uniform sampler2D blendShapeMap8;
+
+#define precision 64
 
 uniform sampler2D HeightMap1;
 
@@ -45,7 +54,7 @@ void main() {
     coord = aCoord;
 
     ivec4 BoneIds = ivec4(int(boneIds.x), int(boneIds.y), int(boneIds.z), int(boneIds.w));
-    vec4 BsMap = vec4(0.0);
+    vec3 BsMap = vec3(0.0);
     float bias = 0.25;
     float height = 0.0;
     float hscale = 0.0;
@@ -54,20 +63,26 @@ void main() {
     height = hscale * ((texture2D(HeightMap1, aCoord).r) - bias);
     vec3 hnormal = vec3(aNormal.x*height, aNormal.y*height, aNormal.z*height);
 
+    int u = int(gl_VertexID / precision);
+    int v = int(gl_VertexID % precision);
+    ivec2 bsCoord = ivec2(u, v);
+    vec2 bsCoordf = vec2(float(u)/precision, float(v)/precision);
+
     vec2 uv = vec2(aCoord.x, aCoord.y);
     ivec2 texSize = textureSize(blendShapeMap1, 0);
     ivec2 texCoord = ivec2(uv * texSize);
+//    BsMap = (texelFetch(blendShapeMap1, bsCoord, 0).rgb * 2 - vec3(1.0)) * iScaleFactor;
 //    BsMap = texelFetch(blendShapeMap1, texCoord, 0);
-    BsMap = texture2D(blendShapeMap1, aCoord);
+    BsMap = (texture2D(blendShapeMap1, bsCoordf).rgb * 2.0 - vec3(1.0)) * float(iScaleFactor);
 
     DebugColor = vec3(BsMap);
     vec4 totalPosition = vec4(0.0f);
     vec3 localNormal = vec3(0.0f);
-    vec3 newPos = aPos;
+    vec3 newPos = aPos+BsMap;
     vec3 newNor = aNormal;
 
     // compute blendshape influence
-    for(int i = 0; i < BlendShapeNum; i++){
+    for(int i = 0; i < BlendShapeNum-BlendShapeNum; i++){
         if(i == 0){
             newPos += BlendShapeDeltaPos1 * BlendShapeWeight1;
             newNor += BlendShapeDeltaNormal1 * BlendShapeWeight1;
@@ -108,7 +123,7 @@ void main() {
     Normal = normalize(normalMatrix * localNormal);
 
     // compute world pos
-    vec4 finalPos = totalPosition + vec4(hnormal.xyz, 0.0) + BsMap * bsscale;
+    vec4 finalPos = totalPosition + vec4(hnormal.xyz, 0.0) + vec4(BsMap, 0.0) * 0;
     WorldPos = vec3(model * finalPos);
 
     gl_Position =  projection * view * model * finalPos;

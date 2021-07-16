@@ -80,15 +80,18 @@ void GLWidget::paintGL() {
     SHADER(0)->setUniformValue("BlendShapeWeight3", customGeometry->animator.bsWeight3);
     SHADER(0)->setUniformValue("BlendShapeWeight4", customGeometry->animator.bsWeight4);
     SHADER(0)->setUniformValue("BlendShapeNum", customGeometry->m_NumBlendShape);
+    SHADER(0)->setUniformValue("iScaleFactor", iScaleFactor);
 
-//    pbo.bind();
-    glActiveTexture(GL_TEXTURE0);
-    SHADER(0)->setUniformValue("blendShapeMap1", 0);
-    blendShapeTexture->bind();
+    for(int i=0;i < customGeometry->m_NumBlendShape;i++){
+        glActiveTexture(GL_TEXTURE0);
+        QString bsMap = QString("blendShapeMap") + QString::number(i);
+        SHADER(0)->setUniformValue("blendShapeMap1", 0);
+        blendShapeTextures[i]->bind();
+    }
 
     model.setToIdentity();
     model.translate(QVector3D(0.0, -1.0, 0.0));
-    model.scale(0.1);
+    model.scale(1);
 //    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     customGeometry->drawGeometry(
             SHADER(0),
@@ -99,18 +102,33 @@ void GLWidget::paintGL() {
 
 void GLWidget::createBlendShapeTex() {
     int lengthBSD = customGeometry->m_blendShapeData.length();
+    int bsNum = customGeometry->m_NumBlendShape;
+    iScaleFactor = std::pow(2, int(customGeometry->scaleFactor/2) + 1);
+//    iScaleFactor = 1;
+    qDebug() << "lengthBSD: " << lengthBSD;
+    qDebug() << "iScaleFactor: " << iScaleFactor;
+    for(int i=0; i<bsNum;i++){
+        QOpenGLTexture* blendShapeTexture = new QOpenGLTexture(QOpenGLTexture::Target2D);
+        blendShapeTexture->create();
+        blendShapeTexture->setFormat(QOpenGLTexture::RGBA32F);
+        blendShapeTexture->setSize(precision, precision, 3);
+        blendShapeTexture->allocateStorage(QOpenGLTexture::RGBA, QOpenGLTexture::Float32);
 
-    blendShapeTexture = new QOpenGLTexture(QOpenGLTexture::Target2D);
-    blendShapeTexture->create();
-    blendShapeTexture->setFormat(QOpenGLTexture::RGBA32F);
-    blendShapeTexture->setSize(precision, precision, 3);
-    blendShapeTexture->allocateStorage(QOpenGLTexture::RGBA, QOpenGLTexture::Float32);
-    QVector<QVector4D> a;
-    for(int i=0;i<precision*precision;i++){
-        QVector4D tmp(1.0, 0.0, 0.0, 1.0);
-        a.append(tmp);
+        QVector<QVector4D> bsData;
+        for(int j=0; j<precision*precision; j++){
+            QVector4D verData;
+            if(j<lengthBSD){
+                QVector3D deltaPos = (customGeometry->m_blendShapeData[j].m_AnimDeltaPos[i] / float(iScaleFactor) + QVector3D(1.0, 1.0, 1.0)) / 2.0;
+                verData = QVector4D(deltaPos, 1.0f);
+            }else{
+                verData = QVector4D(0.0, 0.0, 0.0, 1.0);
+            }
+            bsData.append(verData);
+        }
+        blendShapeTexture->setData(0, QOpenGLTexture::RGBA,QOpenGLTexture::Float32, bsData.constData());
+
+        blendShapeTextures.push_back(blendShapeTexture);
     }
-    blendShapeTexture->setData(0, QOpenGLTexture::RGBA,QOpenGLTexture::Float32, a.constData());
 }
 
 void GLWidget::resizeGL(int width, int height) {

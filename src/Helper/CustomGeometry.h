@@ -80,6 +80,7 @@ public:
     QString modelFilePath;
     QVector<BlendShapePosition> m_blendShapeData;
     unsigned int m_NumBlendShape;
+    float scaleFactor = 0.0;
     unsigned int m_MaxNumBlendShape = 4;
     Animator animator;
 };

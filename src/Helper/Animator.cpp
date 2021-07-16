@@ -38,7 +38,6 @@ void Animator::calculateBoneTransform(const AssimpNodeData *node, QMatrix4x4 par
         QMatrix4x4 offset = boneInfoMap[nodeName].offset;
         m_Transforms[index] = globalTransformation * offset;
     }
-
     for (int i = 0; i < node->childrenCount; i++)
         calculateBoneTransform(&node->children[i], globalTransformation);
 }

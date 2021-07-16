@@ -1,4 +1,5 @@
 #include "CustomGeometry.h"
+#include "cmath"
 
 
 CustomGeometry::CustomGeometry(QString  path) : modelFilePath(std::move(path)) {
@@ -41,6 +42,7 @@ void CustomGeometry::setupAttributePointer(QOpenGLShaderProgram *program) {
     int bitangentLocation = program->attributeLocation("aBitangent");
     program->enableAttributeArray(bitangentLocation);
     program->setAttributeBuffer(bitangentLocation, GL_FLOAT, offset, 3, sizeof(VertexData));
+
 
     // Offset for BlendShape
     unsigned int leftNumBlendShape = m_MaxNumBlendShape - m_NumBlendShape;
@@ -139,7 +141,7 @@ void CustomGeometry::initGeometry() {
     Assimp::Importer importer;
     importer.SetPropertyInteger(AI_CONFIG_PP_PTV_NORMALIZE, true);
 //    const aiScene* scene = importer.ReadFile(modelFilePath.toStdString(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_PreTransformVertices | aiProcess_JoinIdenticalVertices);
-    const aiScene* scene = importer.ReadFile(modelFilePath.toStdString(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+    const aiScene* scene = importer.ReadFile(modelFilePath.toStdString(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices);
     // check for errors
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
     {
@@ -153,6 +155,7 @@ void CustomGeometry::initGeometry() {
     processNode(scene->mRootNode, scene);
 
     qDebug() << "BlendShape Num: " << m_NumBlendShape;
+    qDebug() << "Vertices Count: " << getVerticesData().length();
 
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
 
@@ -344,6 +347,7 @@ void CustomGeometry::processNode(aiNode *node, const aiScene *scene) {
 }
 
 void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
+    float maxBs = -1.0;
     // Walk through each of the mesh's vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
@@ -392,6 +396,8 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         data.tangent = tangent;
         data.bitangent = bitangent;
 
+        qDebug() << i << pos;
+
         // blendShape
         BlendShapePosition bsp;
         bsp.m_numAnimPos = mesh->mNumAnimMeshes;
@@ -407,8 +413,20 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
                 b_nor.setX(b_nml.x);
                 b_nor.setY(b_nml.y);
                 b_nor.setZ(b_nml.z);
-                bsp.m_AnimDeltaPos.push_back(b_pos - pos);
-                bsp.m_AnimDeltaNor.push_back(b_nor - normal);
+                qDebug() << "-- " << b_pos;
+                maxBs = std::max(maxBs, b_pos.y());
+                QVector3D deltaPos = b_pos - pos;
+                QVector3D deltaNor = b_nor - normal;
+                float maximumScaleFactor = 0.0f, minimumScaleFactor = 0.0f;
+                maximumScaleFactor = std::max(maximumScaleFactor, deltaPos.x());
+                maximumScaleFactor = std::max(maximumScaleFactor, deltaPos.y());
+                maximumScaleFactor = std::max(maximumScaleFactor, deltaPos.z());
+                minimumScaleFactor = std::min(minimumScaleFactor, deltaPos.x());
+                minimumScaleFactor = std::min(minimumScaleFactor, deltaPos.y());
+                minimumScaleFactor = std::min(minimumScaleFactor, deltaPos.z());
+                scaleFactor = std::max(scaleFactor, std::max(maximumScaleFactor, std::abs(minimumScaleFactor)));
+                bsp.m_AnimDeltaPos.push_back(deltaPos);
+                bsp.m_AnimDeltaNor.push_back(deltaNor);
                 if(b==0){
                     data.m_BlendShapeDeltaPos1 = b_pos - pos;
                     data.m_BlendShapeDeltaNormal1 = b_nor-normal;
@@ -432,7 +450,7 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
 
         vertices.push_back(data);
     }
-
+    qDebug() << maxBs;
     // now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
     for(unsigned int i = 0; i < mesh->mNumFaces; i++)
     {
