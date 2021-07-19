@@ -2,7 +2,7 @@
 #include <QKeyEvent>
 #include <QTimer>
 
-#define STB_IMAGE_IMPLEMENTATION
+//#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 #define SHADER(x) programs[x]
@@ -88,9 +88,9 @@ void GLWidget::paintGL() {
     SHADER(0)->setUniformValue("Precision", precision);
 
     for(int i=0;i < customGeometry->m_NumBlendShape;i++){
-        glActiveTexture(GL_TEXTURE0);
-        QString bsMap = QString("blendShapeMap") + QString::number(i);
-        SHADER(0)->setUniformValue(bsMap.toStdString().c_str(), 0);
+        QString bsMap = QString("blendShapeMap") + QString::number(i+1);
+        glActiveTexture(GL_TEXTURE0+i);
+        SHADER(0)->setUniformValue(bsMap.toStdString().c_str(), i);
         blendShapeTextures[i]->bind();
     }
 
@@ -106,40 +106,61 @@ void GLWidget::paintGL() {
 }
 
 void GLWidget::createBlendShapeTex() {
+    for(int i=0; i<14;i++){
+        int apart = std::pow(2, i);
+        if(apart*apart/2 > customGeometry->verticesCount){
+            precision = apart;
+            break;
+        }
+    }
+
     int lengthBSD = customGeometry->m_blendShapeData.length();
     int bsNum = customGeometry->m_NumBlendShape;
+    int texDepth = 4;
     iScaleFactor = std::pow(2, int(customGeometry->scaleFactor/2) + 1);
     qDebug() << "lengthBSD: " << lengthBSD;
     qDebug() << "iScaleFactor: " << iScaleFactor;
+    qDebug() << "precision: " << precision;
     for(int i=0; i<bsNum;i++){
         QOpenGLTexture* blendShapeTexture = new QOpenGLTexture(QOpenGLTexture::Target2D);
         blendShapeTexture->create();
         blendShapeTexture->setFormat(QOpenGLTexture::RGBA32F);
         blendShapeTexture->setSize(precision, precision, 3);
         blendShapeTexture->allocateStorage(QOpenGLTexture::RGBA, QOpenGLTexture::Float32);
+        int halfIndex = precision*precision/2;
         QVector<unsigned char> bsDataUc;
         QVector<QVector4D> bsData;
+
+        bsDataUc.resize(precision*precision*texDepth);
+        bsDataUc.fill(0);
+        bsData.resize(precision*precision);
+        QVector4D empty(0.0, 0.0, 0.0, 1.0);
+        bsData.fill(empty);
+
         for(int j=0; j<precision*precision; j++){
+            if(j == halfIndex)
+                break;
+
             QVector4D verData;
+            QVector4D norData;
+            verData = QVector4D(0.0, 0.0, 0.0, 1.0);
+            norData = QVector4D(0.0, 0.0, 0.0, 1.0);
             if(j<lengthBSD){
                 QVector3D deltaPos = (customGeometry->m_blendShapeData[j].m_AnimDeltaPos[i] / float(iScaleFactor) + QVector3D(1.0, 1.0, 1.0)) / 2.0;
+                QVector3D deltaNor = (customGeometry->m_blendShapeData[j].m_AnimDeltaNor[i] / float(iScaleFactor) + QVector3D(1.0, 1.0, 1.0)) / 2.0;
                 verData = QVector4D(deltaPos, 1.0f);
-                bsDataUc.append(deltaPos.x()*255);
-                bsDataUc.append(deltaPos.y()*255);
-                bsDataUc.append(deltaPos.z()*255);
-                bsDataUc.append(255);
-
-            }else{
-                verData = QVector4D(0.0, 0.0, 0.0, 1.0);
-                bsDataUc.append(0);
-                bsDataUc.append(0);
-                bsDataUc.append(0);
-                bsDataUc.append(255);
+                norData = QVector4D(deltaNor, 1.0f);
             }
-            bsData.append(verData);
+
+            bsData[j] = verData;
+            bsData[halfIndex+j] = norData;
+            // Debug
+            //bsDataUc[j*4+0] = verData.x()*255; bsDataUc[j*4+1] = verData.y()*255;  bsDataUc[j*4+2] = verData.z()*255;  bsDataUc[j*4+3] = 255;
+            //bsDataUc[(halfIndex+j)*4+0] = norData.x()*255; bsDataUc[(halfIndex+j)*4+1] = norData.y()*255; bsDataUc[(halfIndex+j)*4+2] = norData.z()*255; bsDataUc[(halfIndex+j)*4+3] = 255;
         }
-        QImage image(bsDataUc.data(), precision, precision, QImage::Format_RGBA8888);
-        image.save(QString("src/20_SkeletalAnimation/resource/blendShapeTex")+QString::number(i)+QString(".png"));
+        // Write to disk
+        //QImage image(bsDataUc.data(), precision, precision, QImage::Format_RGBA8888);
+        //image.save(QString("src/20_SkeletalAnimation/resource/blendShapeTex")+QString::number(i)+QString(".png"));
 
         blendShapeTexture->setData(0, QOpenGLTexture::RGBA,QOpenGLTexture::Float32, bsData.constData());
 

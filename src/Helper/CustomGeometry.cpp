@@ -132,8 +132,10 @@ void CustomGeometry::initGeometry() {
     // process ASSIMP's root node recursively
     processNode(scene->mRootNode, scene);
 
+    verticesCount = getVerticesData().length();
+
     qDebug() << "BlendShape Num: " << m_NumBlendShape;
-    qDebug() << "Vertices Count: " << getVerticesData().length();
+    qDebug() << "Vertices Count: " << verticesCount;
 
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
 
@@ -409,7 +411,7 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
 
         vertices.push_back(data);
     }
-    qDebug() << maxBs;
+
     // now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
     for(unsigned int i = 0; i < mesh->mNumFaces; i++)
     {

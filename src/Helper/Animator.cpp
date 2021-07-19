@@ -71,5 +71,5 @@ void Animator::calculateBlendShapePosition(QVector<KeyMorph> km ) {
         if(i==7)
             bsWeight8 = km[bsIndex0].m_Weights[7];
     }
-    qDebug() << bsWeight1 << bsWeight2 << bsWeight3 << bsWeight4 << bsWeight5 << bsWeight6 << bsWeight7 << bsWeight8;
+    //qDebug() << bsWeight1 << bsWeight2 << bsWeight3 << bsWeight4 << bsWeight5 << bsWeight6 << bsWeight7 << bsWeight8;
 }

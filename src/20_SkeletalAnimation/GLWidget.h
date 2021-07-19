@@ -43,7 +43,7 @@ protected:
 
     void glSetting();
 
-    int precision = 128;
+    int precision;
     int iScaleFactor = 0;
     QVector<QOpenGLTexture *> blendShapeTextures;
     void createBlendShapeTex();

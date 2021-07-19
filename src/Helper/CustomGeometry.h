@@ -77,6 +77,8 @@ private:
     Animation animation;
 
 public:
+    unsigned int verticesCount;
+
     QString modelFilePath;
     QVector<BlendShapePosition> m_blendShapeData;
     unsigned int m_NumBlendShape;
