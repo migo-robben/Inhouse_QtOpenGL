@@ -15,14 +15,6 @@ struct VertexData
     QVector3D normal;
     QVector3D tangent;
     QVector3D bitangent;
-    QVector3D m_BlendShapeDeltaPos1;
-    QVector3D m_BlendShapeDeltaPos2;
-    QVector3D m_BlendShapeDeltaPos3;
-    QVector3D m_BlendShapeDeltaPos4;
-    QVector3D m_BlendShapeDeltaNormal1;
-    QVector3D m_BlendShapeDeltaNormal2;
-    QVector3D m_BlendShapeDeltaNormal3;
-    QVector3D m_BlendShapeDeltaNormal4;
     QVector4D m_BoneIDs;
     QVector4D m_Weights;
     QVector3D ObjectSHCoefficient[9];

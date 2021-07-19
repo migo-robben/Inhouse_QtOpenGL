@@ -24,6 +24,10 @@ public:
     float bsWeight2 = 0.0f;
     float bsWeight3 = 0.0f;
     float bsWeight4 = 0.0f;
+    float bsWeight5 = 0.0f;
+    float bsWeight6 = 0.0f;
+    float bsWeight7 = 0.0f;
+    float bsWeight8 = 0.0f;
 
 private:
     QVector<QMatrix4x4> m_Transforms;

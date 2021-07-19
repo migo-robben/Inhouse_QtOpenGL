@@ -43,28 +43,6 @@ void CustomGeometry::setupAttributePointer(QOpenGLShaderProgram *program) {
     program->enableAttributeArray(bitangentLocation);
     program->setAttributeBuffer(bitangentLocation, GL_FLOAT, offset, 3, sizeof(VertexData));
 
-
-    // Offset for BlendShape
-    unsigned int leftNumBlendShape = m_MaxNumBlendShape - m_NumBlendShape;
-    for(int i=1;i <= m_NumBlendShape; i++){
-        offset += sizeof(QVector3D);
-        QString bsNum = QString("BlendShapeDeltaPos") + QString::number(i);
-        int bsLocation = program->attributeLocation(bsNum);
-        program->enableAttributeArray(bsLocation);
-        program->setAttributeBuffer(bsLocation, GL_FLOAT, offset, 3, sizeof(VertexData));
-    }
-    offset += sizeof(QVector3D) * leftNumBlendShape;
-
-    // Offset BlendShape Normal
-    for(int i=1;i <= m_NumBlendShape; i++){
-        offset += sizeof(QVector3D);
-        QString bsNum = QString("BlendShapeDeltaNormal") + QString::number(i);
-        int bsLocation = program->attributeLocation(bsNum);
-        program->enableAttributeArray(bsLocation);
-        program->setAttributeBuffer(bsLocation, GL_FLOAT, offset, 3, sizeof(VertexData));
-    }
-    offset += sizeof(QVector3D) * leftNumBlendShape;
-
     // Offset for boneIds
     offset += sizeof(QVector3D);
 
@@ -396,8 +374,6 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         data.tangent = tangent;
         data.bitangent = bitangent;
 
-        qDebug() << i << pos;
-
         // blendShape
         BlendShapePosition bsp;
         bsp.m_numAnimPos = mesh->mNumAnimMeshes;
@@ -413,7 +389,6 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
                 b_nor.setX(b_nml.x);
                 b_nor.setY(b_nml.y);
                 b_nor.setZ(b_nml.z);
-                qDebug() << "-- " << b_pos;
                 maxBs = std::max(maxBs, b_pos.y());
                 QVector3D deltaPos = b_pos - pos;
                 QVector3D deltaNor = b_nor - normal;
@@ -427,22 +402,6 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
                 scaleFactor = std::max(scaleFactor, std::max(maximumScaleFactor, std::abs(minimumScaleFactor)));
                 bsp.m_AnimDeltaPos.push_back(deltaPos);
                 bsp.m_AnimDeltaNor.push_back(deltaNor);
-                if(b==0){
-                    data.m_BlendShapeDeltaPos1 = b_pos - pos;
-                    data.m_BlendShapeDeltaNormal1 = b_nor-normal;
-                }
-                if(b==1){
-                    data.m_BlendShapeDeltaPos2 = b_pos - pos;
-                    data.m_BlendShapeDeltaNormal2 = b_nor-normal;
-                }
-                if(b==2){
-                    data.m_BlendShapeDeltaPos3 = b_pos-pos;
-                    data.m_BlendShapeDeltaNormal3 = b_nor-normal;
-                }
-                if(b==3){
-                    data.m_BlendShapeDeltaPos4 = b_pos-pos;
-                    data.m_BlendShapeDeltaNormal4 = b_nor-normal;
-                }
             }
         }
         assert(bsp.m_numAnimPos == bsp.m_AnimDeltaPos.length());

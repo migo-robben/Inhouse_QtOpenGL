@@ -7,14 +7,6 @@ layout (location = 3) in vec3 aTangent;
 layout (location = 4) in vec3 aBitangent;
 layout (location = 5) in vec4 boneIds;
 layout (location = 6) in vec4 weights;
-layout (location = 7) in vec3 BlendShapeDeltaPos1;
-layout (location = 8) in vec3 BlendShapeDeltaPos2;
-layout (location = 9) in vec3 BlendShapeDeltaPos3;
-layout (location = 10) in vec3 BlendShapeDeltaPos4;
-layout (location = 11) in vec3 BlendShapeDeltaNormal1;
-layout (location = 12) in vec3 BlendShapeDeltaNormal2;
-layout (location = 13) in vec3 BlendShapeDeltaNormal3;
-layout (location = 14) in vec3 BlendShapeDeltaNormal4;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -28,6 +20,10 @@ uniform float BlendShapeWeight1;
 uniform float BlendShapeWeight2;
 uniform float BlendShapeWeight3;
 uniform float BlendShapeWeight4;
+uniform float BlendShapeWeight5;
+uniform float BlendShapeWeight6;
+uniform float BlendShapeWeight7;
+uniform float BlendShapeWeight8;
 
 uniform int BlendShapeNum;
 uniform int iScaleFactor;
@@ -41,7 +37,7 @@ uniform sampler2D blendShapeMap6;
 uniform sampler2D blendShapeMap7;
 uniform sampler2D blendShapeMap8;
 
-#define precision 64
+uniform int Precision;
 
 uniform sampler2D HeightMap1;
 
@@ -63,43 +59,50 @@ void main() {
     height = hscale * ((texture2D(HeightMap1, aCoord).r) - bias);
     vec3 hnormal = vec3(aNormal.x*height, aNormal.y*height, aNormal.z*height);
 
-    int u = int(gl_VertexID / precision);
-    int v = int(gl_VertexID % precision);
+    int u = int(gl_VertexID / Precision);
+    int v = int(gl_VertexID % Precision);
     ivec2 bsCoord = ivec2(u, v);
-    vec2 bsCoordf = vec2(float(u)/precision, float(v)/precision);
+    vec2 bsCoordf = vec2(float(u)/Precision, float(v)/Precision);
 
     vec2 uv = vec2(aCoord.x, aCoord.y);
     ivec2 texSize = textureSize(blendShapeMap1, 0);
     ivec2 texCoord = ivec2(uv * texSize);
-//    BsMap = (texelFetch(blendShapeMap1, bsCoord, 0).rgb * 2 - vec3(1.0)) * iScaleFactor;
+//    BsMap = (texelFetch(blendShapeMap1, bsCoord, 0).rgb * 2 - vec3(1.0)) * iScaleFactor * BlendShapeWeight1;
 //    BsMap = texelFetch(blendShapeMap1, texCoord, 0);
-    BsMap = (texture2D(blendShapeMap1, bsCoordf).rgb * 2.0 - vec3(1.0)) * float(iScaleFactor);
+    BsMap = (texture2D(blendShapeMap1, bsCoordf).rgb * 2.0 - vec3(1.0)) * float(iScaleFactor) * BlendShapeWeight1;
+//    BsMap = texture2D(blendShapeMap1, aCoord).rgb;
+//    if(gl_VertexID==0)
+//        BsMap = vec3(1,0,0);
+//    else
+//        BsMap = vec3(0,0,0);
 
     DebugColor = vec3(BsMap);
     vec4 totalPosition = vec4(0.0f);
     vec3 localNormal = vec3(0.0f);
-    vec3 newPos = aPos+BsMap;
+    vec3 newPos = aPos;
     vec3 newNor = aNormal;
 
+
+
     // compute blendshape influence
-    for(int i = 0; i < BlendShapeNum-BlendShapeNum; i++){
-        if(i == 0){
-            newPos += BlendShapeDeltaPos1 * BlendShapeWeight1;
-            newNor += BlendShapeDeltaNormal1 * BlendShapeWeight1;
-        }
-        if(i == 1){
-            newPos += BlendShapeDeltaPos2 * BlendShapeWeight2;
-            newNor += BlendShapeDeltaNormal2 * BlendShapeWeight2;
-        }
-        if(i == 2){
-            newPos += BlendShapeDeltaPos3 * BlendShapeWeight3;
-            newNor += BlendShapeDeltaNormal3 * BlendShapeWeight3;
-        }
-        if(i == 3){
-            newPos += BlendShapeDeltaPos4 * BlendShapeWeight4;
-            newNor += BlendShapeDeltaNormal4 * BlendShapeWeight4;
-        }
-    }
+//    for(int i = 0; i < BlendShapeNum-BlendShapeNum; i++){
+//        if(i == 0){
+//            newPos += BlendShapeDeltaPos1 * BlendShapeWeight1;
+//            newNor += BlendShapeDeltaNormal1 * BlendShapeWeight1;
+//        }
+//        if(i == 1){
+//            newPos += BlendShapeDeltaPos2 * BlendShapeWeight2;
+//            newNor += BlendShapeDeltaNormal2 * BlendShapeWeight2;
+//        }
+//        if(i == 2){
+//            newPos += BlendShapeDeltaPos3 * BlendShapeWeight3;
+//            newNor += BlendShapeDeltaNormal3 * BlendShapeWeight3;
+//        }
+//        if(i == 3){
+//            newPos += BlendShapeDeltaPos4 * BlendShapeWeight4;
+//            newNor += BlendShapeDeltaNormal4 * BlendShapeWeight4;
+//        }
+//    }
 
     // compute bone influence
     for(int i = 0 ; i < MAX_BONE_INFLUENCE ; i++)
