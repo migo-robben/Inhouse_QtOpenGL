@@ -2,18 +2,21 @@
 #include <QKeyEvent>
 #include <QTimer>
 
+//#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 #define SHADER(x) programs[x]
 
 GLWidget::GLWidget(QWidget *parent)
         : QOpenGLWidget(parent),
           customGeometry(nullptr),
           camera(nullptr),
-          diffuseTexture(nullptr) {
+          diffuseTexture(nullptr){
 
     // Create two shader program
     // the first one use for offscreen rendering
     // the second for default framebuffer rendering
-    for (int i=0; i<1; i++) {
+    for (int i=0; i<2; i++) {
         programs.push_back(new QOpenGLShaderProgram(this));
     }
 
@@ -51,6 +54,8 @@ void GLWidget::initializeGL() {
     glSetting();
     initGeometry();
 
+    createBlendShapeTex();
+
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &GLWidget::updateFrame);
     timer->start(33);
@@ -70,16 +75,97 @@ void GLWidget::paintGL() {
 
     SHADER(0)->bind();
     SHADER(0)->setUniformValueArray("finalBonesMatrices", transforms.data(), transforms.size());
+    SHADER(0)->setUniformValue("BlendShapeWeight1", customGeometry->animator.bsWeight1);
+    SHADER(0)->setUniformValue("BlendShapeWeight2", customGeometry->animator.bsWeight2);
+    SHADER(0)->setUniformValue("BlendShapeWeight3", customGeometry->animator.bsWeight3);
+    SHADER(0)->setUniformValue("BlendShapeWeight4", customGeometry->animator.bsWeight4);
+    SHADER(0)->setUniformValue("BlendShapeWeight5", customGeometry->animator.bsWeight5);
+    SHADER(0)->setUniformValue("BlendShapeWeight6", customGeometry->animator.bsWeight6);
+    SHADER(0)->setUniformValue("BlendShapeWeight7", customGeometry->animator.bsWeight7);
+    SHADER(0)->setUniformValue("BlendShapeWeight8", customGeometry->animator.bsWeight8);
+    SHADER(0)->setUniformValue("BlendShapeNum", customGeometry->m_NumBlendShape);
+    SHADER(0)->setUniformValue("iScaleFactor", iScaleFactor);
+    SHADER(0)->setUniformValue("Precision", precision);
+
+    for(int i=0;i < customGeometry->m_NumBlendShape;i++){
+        QString bsMap = QString("blendShapeMap") + QString::number(i+1);
+        glActiveTexture(GL_TEXTURE0+i);
+        SHADER(0)->setUniformValue(bsMap.toStdString().c_str(), i);
+        blendShapeTextures[i]->bind();
+    }
 
     model.setToIdentity();
     model.translate(QVector3D(0.0, -1.0, 0.0));
-    model.scale(0.01);
+    model.scale(1);
+//    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     customGeometry->drawGeometry(
             SHADER(0),
             model,
             camera->getCameraView(),
-            camera->getCameraProjection(),
-            diffuseTexture);
+            camera->getCameraProjection());
+}
+
+void GLWidget::createBlendShapeTex() {
+    for(int i=0; i<14;i++){
+        int apart = std::pow(2, i);
+        if(apart*apart/2 > customGeometry->verticesCount){
+            precision = apart;
+            break;
+        }
+    }
+
+    int lengthBSD = customGeometry->m_blendShapeData.length();
+    int bsNum = customGeometry->m_NumBlendShape;
+    int texDepth = 4;
+    iScaleFactor = std::pow(2, int(customGeometry->scaleFactor/2) + 1);
+    qDebug() << "lengthBSD: " << lengthBSD;
+    qDebug() << "iScaleFactor: " << iScaleFactor;
+    qDebug() << "precision: " << precision;
+    for(int i=0; i<bsNum;i++){
+        QOpenGLTexture* blendShapeTexture = new QOpenGLTexture(QOpenGLTexture::Target2D);
+        blendShapeTexture->create();
+        blendShapeTexture->setFormat(QOpenGLTexture::RGBA32F);
+        blendShapeTexture->setSize(precision, precision, 3);
+        blendShapeTexture->allocateStorage(QOpenGLTexture::RGBA, QOpenGLTexture::Float32);
+        int halfIndex = precision*precision/2;
+        QVector<unsigned char> bsDataUc;
+        QVector<QVector4D> bsData;
+
+        bsDataUc.resize(precision*precision*texDepth);
+        bsDataUc.fill(0);
+        bsData.resize(precision*precision);
+        QVector4D empty(0.0, 0.0, 0.0, 1.0);
+        bsData.fill(empty);
+
+        for(int j=0; j<precision*precision; j++){
+            if(j == halfIndex)
+                break;
+
+            QVector4D verData;
+            QVector4D norData;
+            verData = QVector4D(0.0, 0.0, 0.0, 1.0);
+            norData = QVector4D(0.0, 0.0, 0.0, 1.0);
+            if(j<lengthBSD){
+                QVector3D deltaPos = (customGeometry->m_blendShapeData[j].m_AnimDeltaPos[i] / float(iScaleFactor) + QVector3D(1.0, 1.0, 1.0)) / 2.0;
+                QVector3D deltaNor = (customGeometry->m_blendShapeData[j].m_AnimDeltaNor[i] / float(iScaleFactor) + QVector3D(1.0, 1.0, 1.0)) / 2.0;
+                verData = QVector4D(deltaPos, 1.0f);
+                norData = QVector4D(deltaNor, 1.0f);
+            }
+
+            bsData[j] = verData;
+            bsData[halfIndex+j] = norData;
+            // Debug
+            //bsDataUc[j*4+0] = verData.x()*255; bsDataUc[j*4+1] = verData.y()*255;  bsDataUc[j*4+2] = verData.z()*255;  bsDataUc[j*4+3] = 255;
+            //bsDataUc[(halfIndex+j)*4+0] = norData.x()*255; bsDataUc[(halfIndex+j)*4+1] = norData.y()*255; bsDataUc[(halfIndex+j)*4+2] = norData.z()*255; bsDataUc[(halfIndex+j)*4+3] = 255;
+        }
+        // Write to disk
+        //QImage image(bsDataUc.data(), precision, precision, QImage::Format_RGBA8888);
+        //image.save(QString("src/20_SkeletalAnimation/resource/blendShapeTex")+QString::number(i)+QString(".png"));
+
+        blendShapeTexture->setData(0, QOpenGLTexture::RGBA,QOpenGLTexture::Float32, bsData.constData());
+
+        blendShapeTextures.push_back(blendShapeTexture);
+    }
 }
 
 void GLWidget::resizeGL(int width, int height) {
@@ -99,10 +185,18 @@ void GLWidget::initShaders() {
         close();
     if (!SHADER(0)->bind())
         close();
+    if (!SHADER(1)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/20_SkeletalAnimation/shaders/blendShape.vs.glsl"))
+        close();
+    if (!SHADER(1)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/20_SkeletalAnimation/shaders/blendShape.fs.glsl"))
+        close();
+    if (!SHADER(1)->link())
+        close();
+    if (!SHADER(1)->bind())
+        close();
 }
 
 void GLWidget::initGeometry() {
-    customGeometry = new CustomGeometry(QString("src/20_SkeletalAnimation/resource/vampire/dancing_vampire.fbx")); // dancing_vampire
+    customGeometry = new CustomGeometry(QString("src/20_SkeletalAnimation/resource/testBlendShape.fbx")); // dancing_vampire
     customGeometry->initGeometry();
     customGeometry->initAnimation();
     customGeometry->initAnimator();
@@ -110,7 +204,7 @@ void GLWidget::initGeometry() {
 }
 
 void GLWidget::initTexture() {
-    diffuseTexture = new QOpenGLTexture(QImage(QString("src/20_SkeletalAnimation/resource/vampire/textures/Vampire_diffuse.png")));
+    diffuseTexture = new QOpenGLTexture(QImage(QString("src/20_SkeletalAnimation/resource/vampire/textures/Pure.png")));
 }
 
 void GLWidget::glSetting() {

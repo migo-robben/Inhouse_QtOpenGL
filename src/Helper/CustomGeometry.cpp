@@ -1,4 +1,5 @@
 #include "CustomGeometry.h"
+#include "cmath"
 
 
 CustomGeometry::CustomGeometry(QString  path) : modelFilePath(std::move(path)) {
@@ -118,7 +119,7 @@ void CustomGeometry::initGeometry() {
     Assimp::Importer importer;
     importer.SetPropertyInteger(AI_CONFIG_PP_PTV_NORMALIZE, true);
 //    const aiScene* scene = importer.ReadFile(modelFilePath.toStdString(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_PreTransformVertices | aiProcess_JoinIdenticalVertices);
-    const aiScene* scene = importer.ReadFile(modelFilePath.toStdString(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+    const aiScene* scene = importer.ReadFile(modelFilePath.toStdString(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices);
     // check for errors
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
     {
@@ -126,8 +127,15 @@ void CustomGeometry::initGeometry() {
         return;
     }
 
+    m_indexIncrease = 0;
+
     // process ASSIMP's root node recursively
     processNode(scene->mRootNode, scene);
+
+    verticesCount = getVerticesData().length();
+
+    qDebug() << "BlendShape Num: " << m_NumBlendShape;
+    qDebug() << "Vertices Count: " << verticesCount;
 
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
 
@@ -145,7 +153,7 @@ void CustomGeometry::initAnimation() {
 }
 
 void CustomGeometry::initAnimator() {
-    animator = Animator(&animation, getBoneCount());
+    animator = Animator(&animation, this, getBoneCount());
 }
 
 void CustomGeometry::initGeometry(QVector<QVector<QVector3D>> &ObjectSHCoefficient) {
@@ -319,6 +327,7 @@ void CustomGeometry::processNode(aiNode *node, const aiScene *scene) {
 }
 
 void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
+    float maxBs = -1.0;
     // Walk through each of the mesh's vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
@@ -327,6 +336,7 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         QVector3D normal;
         QVector3D tangent;
         QVector3D bitangent;
+        QVector3D bsPos;
         VertexData data;
 
         setVertexBoneDataToDefault(data);
@@ -334,6 +344,8 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         pos.setX(mesh->mVertices[i].x);
         pos.setY(mesh->mVertices[i].y);
         pos.setZ(mesh->mVertices[i].z);
+
+        bsPos = pos;
 
         if (mesh->mTextureCoords[0]) {
             tex.setX(mesh->mTextureCoords[0][i].x);
@@ -364,6 +376,39 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         data.tangent = tangent;
         data.bitangent = bitangent;
 
+        // blendShape
+        BlendShapePosition bsp;
+        bsp.m_numAnimPos = mesh->mNumAnimMeshes;
+        m_NumBlendShape = bsp.m_numAnimPos;
+        if(mesh->mNumAnimMeshes){
+            for(unsigned int b=0; b<mesh->mNumAnimMeshes;++b){
+                QVector3D b_pos, b_nor;
+                aiVector3D b_ver = mesh->mAnimMeshes[b]->mVertices[i];
+                aiVector3D b_nml = mesh->mAnimMeshes[b]->mNormals[i];
+                b_pos.setX(b_ver.x);
+                b_pos.setY(b_ver.y);
+                b_pos.setZ(b_ver.z);
+                b_nor.setX(b_nml.x);
+                b_nor.setY(b_nml.y);
+                b_nor.setZ(b_nml.z);
+                maxBs = std::max(maxBs, b_pos.y());
+                QVector3D deltaPos = b_pos - pos;
+                QVector3D deltaNor = b_nor - normal;
+                float maximumScaleFactor = 0.0f, minimumScaleFactor = 0.0f;
+                maximumScaleFactor = std::max(maximumScaleFactor, deltaPos.x());
+                maximumScaleFactor = std::max(maximumScaleFactor, deltaPos.y());
+                maximumScaleFactor = std::max(maximumScaleFactor, deltaPos.z());
+                minimumScaleFactor = std::min(minimumScaleFactor, deltaPos.x());
+                minimumScaleFactor = std::min(minimumScaleFactor, deltaPos.y());
+                minimumScaleFactor = std::min(minimumScaleFactor, deltaPos.z());
+                scaleFactor = std::max(scaleFactor, std::max(maximumScaleFactor, std::abs(minimumScaleFactor)));
+                bsp.m_AnimDeltaPos.push_back(deltaPos);
+                bsp.m_AnimDeltaNor.push_back(deltaNor);
+            }
+        }
+        assert(bsp.m_numAnimPos == bsp.m_AnimDeltaPos.length());
+        m_blendShapeData.push_back(bsp);
+
         vertices.push_back(data);
     }
 
@@ -373,8 +418,10 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         aiFace face = mesh->mFaces[i];
         // retrieve all indices of the face and store them in the indices vector
         for(unsigned int j = 0; j < face.mNumIndices; j++)
-            indices.push_back(face.mIndices[j]);
+            indices.push_back(face.mIndices[j] + m_indexIncrease);
     }
+
+    m_indexIncrease += mesh->mNumVertices;
 
     extractBoneWeightForVertices(vertices, mesh, scene);
 }

@@ -10,6 +10,7 @@
 #include <QOpenGLFunctions_4_5_Core>
 #include <QOpenGLFramebufferObjectFormat>
 #include <QElapsedTimer>
+#include <QOpenGLDebugLogger>
 
 #include <QDebug>
 
@@ -41,6 +42,11 @@ protected:
     void updateFrame();
 
     void glSetting();
+
+    int precision;
+    int iScaleFactor = 0;
+    QVector<QOpenGLTexture *> blendShapeTextures;
+    void createBlendShapeTex();
 
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;

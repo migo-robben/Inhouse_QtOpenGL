@@ -1,9 +1,11 @@
 #include "Animator.h"
+#include "CustomGeometry.h"
 
-Animator::Animator(Animation* current, int& boneCount) {
+Animator::Animator(Animation* current, CustomGeometry* geometry, int& boneCount) {
     m_CurrentAnimation = current;
     m_CurrentFrame = 0.0;
     m_Transforms.resize(boneCount);
+    m_Geometry = geometry;
 }
 
 void Animator::updateAnimation(float dt) {
@@ -13,6 +15,7 @@ void Animator::updateAnimation(float dt) {
         m_CurrentFrame += m_CurrentAnimation->getTicksPerSecond() * dt;
         m_CurrentFrame = fmod(m_CurrentFrame, m_CurrentAnimation->getDuration());
         calculateBoneTransform(&m_CurrentAnimation->getRootNode(), QMatrix4x4());
+        calculateBlendShapePosition(*m_CurrentAnimation->getKeyMorph());
     }
 }
 
@@ -35,7 +38,38 @@ void Animator::calculateBoneTransform(const AssimpNodeData *node, QMatrix4x4 par
         QMatrix4x4 offset = boneInfoMap[nodeName].offset;
         m_Transforms[index] = globalTransformation * offset;
     }
-
     for (int i = 0; i < node->childrenCount; i++)
         calculateBoneTransform(&node->children[i], globalTransformation);
+}
+
+void Animator::calculateBlendShapePosition(QVector<KeyMorph> km ) {
+    if(km.empty())
+        return;
+
+    int bsIndex0 = int(m_CurrentFrame);
+    int bsIndex1 = int(m_CurrentFrame)+1;
+
+    double lastTime = km[bsIndex0].m_Time;
+    double nextTime = km[bsIndex1].m_Time;
+    double scaleFactor = (m_CurrentFrame-lastTime)/(nextTime-lastTime);
+    int bsWeightLength = km[bsIndex0].m_NumValuesAndWeights;
+    for(int i=0;i<bsWeightLength;i++){
+        if(i==0)
+            bsWeight1 = km[bsIndex0].m_Weights[0];
+        if(i==1)
+            bsWeight2 = km[bsIndex0].m_Weights[1];
+        if(i==2)
+            bsWeight3 = km[bsIndex0].m_Weights[2];
+        if(i==3)
+            bsWeight4 = km[bsIndex0].m_Weights[3];
+        if(i==4)
+            bsWeight5 = km[bsIndex0].m_Weights[4];
+        if(i==5)
+            bsWeight6 = km[bsIndex0].m_Weights[5];
+        if(i==6)
+            bsWeight7 = km[bsIndex0].m_Weights[6];
+        if(i==7)
+            bsWeight8 = km[bsIndex0].m_Weights[7];
+    }
+    //qDebug() << bsWeight1 << bsWeight2 << bsWeight3 << bsWeight4 << bsWeight5 << bsWeight6 << bsWeight7 << bsWeight8;
 }
