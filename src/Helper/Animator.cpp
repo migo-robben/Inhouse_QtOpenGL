@@ -46,6 +46,7 @@ void Animator::calculateBlendShapePosition(QVector<KeyMorph> km ) {
     if(km.empty())
         return;
 
+    // TODO optimise inter
     int bsIndex0 = int(m_CurrentFrame);
     int bsIndex1 = int(m_CurrentFrame)+1;
 

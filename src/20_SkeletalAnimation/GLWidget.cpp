@@ -106,6 +106,7 @@ void GLWidget::paintGL() {
 }
 
 void GLWidget::createBlendShapeTex() {
+    // TODO using sqrt
     for(int i=0; i<14;i++){
         int apart = std::pow(2, i);
         if(apart*apart/2 > customGeometry->verticesCount){
@@ -117,6 +118,7 @@ void GLWidget::createBlendShapeTex() {
     int lengthBSD = customGeometry->m_blendShapeData.length();
     int bsNum = customGeometry->m_NumBlendShape;
     int texDepth = 4;
+    // TODO v3 scale factor
     iScaleFactor = std::pow(2, int(customGeometry->scaleFactor/2) + 1);
     qDebug() << "lengthBSD: " << lengthBSD;
     qDebug() << "iScaleFactor: " << iScaleFactor;
