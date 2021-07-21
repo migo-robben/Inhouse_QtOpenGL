@@ -82,7 +82,7 @@ private:
         MODEONE,
         MODESECOND
     };
-    MODE mode;
+    MODE mode = MODESECOND;
 
     QString cacheFilePath;
     Document document;
@@ -102,25 +102,25 @@ GLWidget::GLWidget(QWidget *parent)
           program(nullptr),
           ebo(QOpenGLBuffer::IndexBuffer) {
 
-    cacheFilePath = QString("src/21_PointCacheAnimation/cache/HelixData.json");
-    std::ifstream ifs(cacheFilePath.toStdString());
-    IStreamWrapper isw(ifs);
-    document.ParseStream(isw);
+    if (!triangleDraw) {
+        cacheFilePath = QString("src/21_PointCacheAnimation/cache/HelixData.json");
+        std::ifstream ifs(cacheFilePath.toStdString());
+        IStreamWrapper isw(ifs);
+        document.ParseStream(isw);
 
-    duration = document["duration"].GetInt();
-    startFrame = document["startFrame"].GetInt();
-    endFrame = document["endFrame"].GetInt();
-    fps = document["fps"].GetInt();
-    pointSize = document["pointSize"].GetInt();
+        duration = document["duration"].GetInt();
+        startFrame = document["startFrame"].GetInt();
+        endFrame = document["endFrame"].GetInt();
+        fps = document["fps"].GetInt();
+        pointSize = document["pointSize"].GetInt();
 
-    vertices.clear();
-    vertices.empty();
-    indices.clear();
-    indices.empty();
+        vertices.clear();
+        vertices.empty();
+        indices.clear();
+        indices.empty();
 
-    mode = DEFAULT;
-
-    qDebug() << "Duration:" << duration << ", start frame:" << startFrame << ", end frame:" << endFrame << ", fps:" << fps << ", point count:" << pointSize;
+        qDebug() << "Duration:" << duration << ", start frame:" << startFrame << ", end frame:" << endFrame << ", fps:" << fps << ", point count:" << pointSize;
+    }
 }
 
 GLWidget::~GLWidget() {
