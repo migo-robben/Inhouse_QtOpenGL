@@ -77,24 +77,13 @@ void GLWidget::paintGL() {
 
     SHADER(0)->bind();
     SHADER(0)->setUniformValueArray("finalBonesMatrices", transforms.data(), transforms.size());
-    SHADER(0)->setUniformValue("BlendShapeWeight1", customGeometry->animator.bsWeight1);
-    SHADER(0)->setUniformValue("BlendShapeWeight2", customGeometry->animator.bsWeight2);
-    SHADER(0)->setUniformValue("BlendShapeWeight3", customGeometry->animator.bsWeight3);
-    SHADER(0)->setUniformValue("BlendShapeWeight4", customGeometry->animator.bsWeight4);
-    SHADER(0)->setUniformValue("BlendShapeWeight5", customGeometry->animator.bsWeight5);
-    SHADER(0)->setUniformValue("BlendShapeWeight6", customGeometry->animator.bsWeight6);
-    SHADER(0)->setUniformValue("BlendShapeWeight7", customGeometry->animator.bsWeight7);
-    SHADER(0)->setUniformValue("BlendShapeWeight8", customGeometry->animator.bsWeight8);
+    SHADER(0)->setUniformValueArray("BlendShapeWeight", customGeometry->animator.bsWeights.data(), customGeometry->animator.bsWeights.count(), 1);
     SHADER(0)->setUniformValue("BlendShapeNum", customGeometry->m_NumBlendShape);
     SHADER(0)->setUniformValue("iScaleFactor", iScaleFactor);
     SHADER(0)->setUniformValue("Precision", precision);
 
-    for(int i=0;i < customGeometry->m_NumBlendShape;i++){
-        QString bsMap = QString("blendShapeMap") + QString::number(i+1);
-        glActiveTexture(GL_TEXTURE0+i);
-        SHADER(0)->setUniformValue(bsMap.toStdString().c_str(), i);
-        blendShapeTextures[i]->bind();
-    }
+    blendShapeTex->bind(0);
+    SHADER(0)->setUniformValue("blendShapeMap", 0);
 
     model.setToIdentity();
     model.translate(QVector3D(0.0, -1.0, 0.0));
@@ -120,17 +109,19 @@ void GLWidget::createBlendShapeTex() {
     int lengthBSD = customGeometry->m_blendShapeData.length();
     int bsNum = customGeometry->m_NumBlendShape;
     int texDepth = 4;
+
+    blendShapeTex->create();
+    blendShapeTex->setFormat(QOpenGLTexture::RGBA32F);
+    blendShapeTex->setSize(precision, precision, 3);
+    blendShapeTex->setLayers(bsNum);
+    blendShapeTex->allocateStorage(QOpenGLTexture::RGBA, QOpenGLTexture::Float32);
+
     // TODO v3 scale factor
     iScaleFactor = std::pow(2, int(customGeometry->scaleFactor/2) + 1);
     qDebug() << "lengthBSD: " << lengthBSD;
     qDebug() << "iScaleFactor: " << iScaleFactor;
     qDebug() << "precision: " << precision;
     for(int i=0; i<bsNum;i++){
-        QOpenGLTexture* blendShapeTexture = new QOpenGLTexture(QOpenGLTexture::Target2D);
-        blendShapeTexture->create();
-        blendShapeTexture->setFormat(QOpenGLTexture::RGBA32F);
-        blendShapeTexture->setSize(precision, precision, 3);
-        blendShapeTexture->allocateStorage(QOpenGLTexture::RGBA, QOpenGLTexture::Float32);
         int halfIndex = precision*precision/2;
         QVector<unsigned char> bsDataUc;
         QVector<QVector4D> bsData;
@@ -165,10 +156,7 @@ void GLWidget::createBlendShapeTex() {
         // Write to disk
         //QImage image(bsDataUc.data(), precision, precision, QImage::Format_RGBA8888);
         //image.save(QString("src/20_SkeletalAnimation/resource/blendShapeTex")+QString::number(i)+QString(".png"));
-
-        blendShapeTexture->setData(0, QOpenGLTexture::RGBA,QOpenGLTexture::Float32, bsData.constData());
-
-        blendShapeTextures.push_back(blendShapeTexture);
+        blendShapeTex->setData(0, i, QOpenGLTexture::RGBA,QOpenGLTexture::Float32, bsData.constData());
     }
 }
 
@@ -181,6 +169,19 @@ void GLWidget::resizeGL(int width, int height) {
 }
 
 void GLWidget::initShaders() {
+    /*
+    QFile vsfile("src/20_SkeletalAnimation/shaders/skeletalAnimation.vs.glsl");
+    if(!vsfile.open(QFile::ReadOnly | QFile::Text))
+    {
+        qDebug() << " Could not open the file";
+        return;
+    }
+    QTextStream in(&vsfile);
+    QString shaderData = in.readAll();
+    shaderData.replace(QString("@MaxBSNum@"), QString("15"));
+    vsfile.close();
+    */
+
     if (!SHADER(0)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/20_SkeletalAnimation/shaders/skeletalAnimation.vs.glsl"))
         close();
     if (!SHADER(0)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/20_SkeletalAnimation/shaders/skeletalAnimation.fs.glsl"))
@@ -209,6 +210,7 @@ void GLWidget::initGeometry() {
 
 void GLWidget::initTexture() {
     diffuseTexture = new QOpenGLTexture(QImage(QString("src/20_SkeletalAnimation/resource/vampire/textures/Pure.png")));
+    blendShapeTex = new QOpenGLTexture(QOpenGLTexture::Target::Target2DArray);
 }
 
 void GLWidget::glSetting() {

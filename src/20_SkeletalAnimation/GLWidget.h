@@ -45,7 +45,6 @@ protected:
 
     int precision;
     int iScaleFactor = 0;
-    QVector<QOpenGLTexture *> blendShapeTextures;
     void createBlendShapeTex();
 
     void mousePressEvent(QMouseEvent *event) override;
@@ -57,6 +56,7 @@ private:
     QList<QOpenGLShaderProgram*> programs;
     CustomGeometry *customGeometry;
     QOpenGLTexture *diffuseTexture;
+    QOpenGLTexture *blendShapeTex;
 
     Camera *camera;
     QMatrix4x4 model;

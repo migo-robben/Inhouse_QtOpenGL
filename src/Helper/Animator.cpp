@@ -54,23 +54,10 @@ void Animator::calculateBlendShapePosition(QVector<KeyMorph> km ) {
     double nextTime = km[bsIndex1].m_Time;
     double scaleFactor = (m_CurrentFrame-lastTime)/(nextTime-lastTime);
     int bsWeightLength = km[bsIndex0].m_NumValuesAndWeights;
+    bsWeights.resize(bsWeightLength);
+    bsWeights.fill(0.0f);
     for(int i=0;i<bsWeightLength;i++){
-        if(i==0)
-            bsWeight1 = km[bsIndex0].m_Weights[0];
-        if(i==1)
-            bsWeight2 = km[bsIndex0].m_Weights[1];
-        if(i==2)
-            bsWeight3 = km[bsIndex0].m_Weights[2];
-        if(i==3)
-            bsWeight4 = km[bsIndex0].m_Weights[3];
-        if(i==4)
-            bsWeight5 = km[bsIndex0].m_Weights[4];
-        if(i==5)
-            bsWeight6 = km[bsIndex0].m_Weights[5];
-        if(i==6)
-            bsWeight7 = km[bsIndex0].m_Weights[6];
-        if(i==7)
-            bsWeight8 = km[bsIndex0].m_Weights[7];
+
+        bsWeights[i] = km[bsIndex0].m_Weights[i];
     }
-    //qDebug() << bsWeight1 << bsWeight2 << bsWeight3 << bsWeight4 << bsWeight5 << bsWeight6 << bsWeight7 << bsWeight8;
 }
