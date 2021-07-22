@@ -133,9 +133,11 @@ void CustomGeometry::initGeometry() {
     processNode(scene->mRootNode, scene);
 
     verticesCount = getVerticesData().length();
+    indicesCount = getIndices().length();
 
     qDebug() << "BlendShape Num: " << m_NumBlendShape;
-    qDebug() << "Vertices Count: " << verticesCount;
+    qDebug() << "Vertices Indices Count: " << verticesCount << indicesCount;
+    qDebug() << "blendShapeSlice: " << blendShapeSlice;
 
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
 
@@ -341,6 +343,8 @@ void CustomGeometry::computeScaleFactor(QVector3D& v){
 
 void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
     float maxBs = -1.0;
+    bool blendShapeUnsliced = true;
+
     // Walk through each of the mesh's vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
@@ -349,7 +353,6 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         QVector3D normal;
         QVector3D tangent;
         QVector3D bitangent;
-        QVector3D bsPos;
         VertexData data;
 
         setVertexBoneDataToDefault(data);
@@ -357,8 +360,6 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         pos.setX(mesh->mVertices[i].x);
         pos.setY(mesh->mVertices[i].y);
         pos.setZ(mesh->mVertices[i].z);
-
-        bsPos = pos;
 
         if (mesh->mTextureCoords[0]) {
             tex.setX(mesh->mTextureCoords[0][i].x);
@@ -394,6 +395,7 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         bsp.m_numAnimPos = mesh->mNumAnimMeshes;
         m_NumBlendShape = bsp.m_numAnimPos;
         if(mesh->mNumAnimMeshes){
+            unsigned int bsLen = mesh->mAnimMeshes[0]->mNumVertices;
             for(unsigned int b=0; b<mesh->mNumAnimMeshes;++b){
                 QVector3D b_pos, b_nor;
                 aiVector3D b_ver = mesh->mAnimMeshes[b]->mVertices[i];
@@ -407,9 +409,19 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
                 bsp.m_AnimDeltaPos.push_back(deltaPos);
                 bsp.m_AnimDeltaNor.push_back(deltaNor);
             }
+            assert(bsp.m_numAnimPos == bsp.m_AnimDeltaPos.length());
+            m_blendShapeData.push_back(bsp);
+            if(blendShapeUnsliced){
+                float lastStar;
+                if(blendShapeSlice.empty()){
+                    lastStar = 0.0f;
+                }else{
+                    lastStar = blendShapeSlice[blendShapeSlice.length()-1].z() + bsLen;
+                }
+                blendShapeSlice.append(QVector3D(m_indexIncrease, m_indexIncrease+bsLen, lastStar));
+                blendShapeUnsliced = false;
+            }
         }
-        assert(bsp.m_numAnimPos == bsp.m_AnimDeltaPos.length());
-        m_blendShapeData.push_back(bsp);
 
         vertices.push_back(data);
     }

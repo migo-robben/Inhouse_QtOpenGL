@@ -6,7 +6,6 @@ in vec3 WorldPos;
 in vec3 DebugColor;
 
 out vec4 FragColor;
-uniform sampler2D blendShapeMap1;
 
 // texture samplers
 uniform sampler2D colorMap;

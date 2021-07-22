@@ -80,12 +80,13 @@ public:
 
 public:
     unsigned int verticesCount;
+    unsigned int indicesCount;
 
     QString modelFilePath;
     QVector<BlendShapePosition> m_blendShapeData;
     unsigned int m_NumBlendShape;
     QVector3D scaleFactor;
-    unsigned int m_MaxNumBlendShape = 4;
+    QVector<QVector3D> blendShapeSlice;
     Animator animator;
 };
 

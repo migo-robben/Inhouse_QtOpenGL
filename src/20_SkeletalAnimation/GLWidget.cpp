@@ -83,14 +83,16 @@ void GLWidget::paintGL() {
     SHADER(0)->setUniformValue("ScaleFactorY", scaleFactorY);
     SHADER(0)->setUniformValue("ScaleFactorZ", scaleFactorZ);
     SHADER(0)->setUniformValue("Precision", precision);
+    SHADER(0)->setUniformValueArray("BlendShapeSlice", customGeometry->blendShapeSlice.data(), customGeometry->blendShapeSlice.count());
 
     blendShapeTex->bind(0);
     SHADER(0)->setUniformValue("blendShapeMap", 0);
 
     model.setToIdentity();
     model.translate(QVector3D(0.0, -1.0, 0.0));
-    model.scale(1);
+    model.scale(0.1);
 //    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
     customGeometry->drawGeometry(
             SHADER(0),
             model,
@@ -122,7 +124,7 @@ void GLWidget::createBlendShapeTex() {
     scaleFactorY = std::pow(2, int(std::round(customGeometry->scaleFactor.y()/2.0f) + 1));
     scaleFactorZ = std::pow(2, int(std::round(customGeometry->scaleFactor.z()/2.0f) + 1));
 
-    qDebug() << "lengthBSD: " << lengthBSD;
+    qDebug() << "lengthBlendShapeData: " << lengthBSD;
     qDebug() << "precision: " << precision;
     qDebug() << "scaleFactor: " << scaleFactorX << scaleFactorY << scaleFactorZ;
     for(int i=0; i<bsNum;i++){
