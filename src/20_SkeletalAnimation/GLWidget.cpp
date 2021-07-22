@@ -58,7 +58,9 @@ void GLWidget::initializeGL() {
 
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &GLWidget::updateFrame);
-    timer->start(33);
+    int refreshMs = 1000.0 / customGeometry->animation.getTicksPerSecond();
+    qDebug() << "refresh: " << refreshMs;
+    timer->start(refreshMs);
     elapsedTimer.start();
 }
 

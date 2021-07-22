@@ -74,6 +74,7 @@ private:
     int m_indexIncrease = 0;
 
     QVector<QMatrix4x4> m_Transforms;
+public:
     Animation animation;
 
 public:
