@@ -44,7 +44,9 @@ protected:
     void glSetting();
 
     int precision;
-    int iScaleFactor = 0;
+    unsigned int scaleFactorX;
+    unsigned int scaleFactorY;
+    unsigned int scaleFactorZ;
     void createBlendShapeTex();
 
     void mousePressEvent(QMouseEvent *event) override;

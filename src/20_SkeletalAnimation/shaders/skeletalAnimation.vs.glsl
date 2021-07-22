@@ -18,7 +18,9 @@ const int MAX_BONE_INFLUENCE = 4;
 uniform mat4 finalBonesMatrices[MAX_BONES];
 
 uniform int BlendShapeNum;
-uniform int iScaleFactor;
+uniform int ScaleFactorX;
+uniform int ScaleFactorY;
+uniform int ScaleFactorZ;
 uniform float BlendShapeWeight[MAX_BS_WEIGHT];
 uniform sampler2DArray blendShapeMap;
 
@@ -58,8 +60,9 @@ void main() {
 
     // Compute BlendShape pos and Normal
     for(int i=0; i < BlendShapeNum; i++){
-        BsMapPos += (texelFetch(blendShapeMap, ivec3(bsCoord, i), 0).rgb * 2 - vec3(1.0)) * iScaleFactor * BlendShapeWeight[i];
-        BsMapNor += (texelFetch(blendShapeMap, ivec3(bsCoord1, i), 0).rgb * 2 - vec3(1.0)) * iScaleFactor * BlendShapeWeight[i];
+        vec3 texBs = texelFetch(blendShapeMap, ivec3(bsCoord, i), 0).rgb * 2 - vec3(1.0);
+        BsMapPos += vec3(texBs.r * ScaleFactorX, texBs.g * ScaleFactorY, texBs.b * ScaleFactorZ) * BlendShapeWeight[i];
+        BsMapNor += (texelFetch(blendShapeMap, ivec3(bsCoord1, i), 0).rgb * 2 - vec3(1.0)) * BlendShapeWeight[i];
     }
 
     // Debug

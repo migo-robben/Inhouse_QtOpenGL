@@ -326,6 +326,19 @@ void CustomGeometry::processNode(aiNode *node, const aiScene *scene) {
     }
 }
 
+void CustomGeometry::computeScaleFactor(QVector3D& v){
+    float maxmFacX=0.0f, maxmFacY=0.0f,maxmFacZ=0.0f, minmFacX=0.0f, minmFacY=0.0f, minmFacZ=0.0f;
+    maxmFacX = std::max(maxmFacX, v.x());
+    maxmFacY = std::max(maxmFacY, v.y());
+    maxmFacZ = std::max(maxmFacZ, v.z());
+    minmFacX = std::min(minmFacX, v.x());
+    minmFacY = std::min(minmFacY, v.y());
+    minmFacZ = std::min(minmFacZ, v.z());
+    scaleFactor.setX(std::max(scaleFactor.x(), std::max(maxmFacX, std::abs(minmFacX))));
+    scaleFactor.setY(std::max(scaleFactor.y(), std::max(maxmFacY, std::abs(minmFacY))));
+    scaleFactor.setZ(std::max(scaleFactor.z(), std::max(maxmFacZ, std::abs(minmFacZ))));
+}
+
 void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
     float maxBs = -1.0;
     // Walk through each of the mesh's vertices
@@ -385,23 +398,12 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
                 QVector3D b_pos, b_nor;
                 aiVector3D b_ver = mesh->mAnimMeshes[b]->mVertices[i];
                 aiVector3D b_nml = mesh->mAnimMeshes[b]->mNormals[i];
-                b_pos.setX(b_ver.x);
-                b_pos.setY(b_ver.y);
-                b_pos.setZ(b_ver.z);
-                b_nor.setX(b_nml.x);
-                b_nor.setY(b_nml.y);
-                b_nor.setZ(b_nml.z);
+                b_pos.setX(b_ver.x); b_pos.setY(b_ver.y); b_pos.setZ(b_ver.z);
+                b_nor.setX(b_nml.x); b_nor.setY(b_nml.y); b_nor.setZ(b_nml.z);
                 maxBs = std::max(maxBs, b_pos.y());
                 QVector3D deltaPos = b_pos - pos;
                 QVector3D deltaNor = b_nor - normal;
-                float maximumScaleFactor = 0.0f, minimumScaleFactor = 0.0f;
-                maximumScaleFactor = std::max(maximumScaleFactor, deltaPos.x());
-                maximumScaleFactor = std::max(maximumScaleFactor, deltaPos.y());
-                maximumScaleFactor = std::max(maximumScaleFactor, deltaPos.z());
-                minimumScaleFactor = std::min(minimumScaleFactor, deltaPos.x());
-                minimumScaleFactor = std::min(minimumScaleFactor, deltaPos.y());
-                minimumScaleFactor = std::min(minimumScaleFactor, deltaPos.z());
-                scaleFactor = std::max(scaleFactor, std::max(maximumScaleFactor, std::abs(minimumScaleFactor)));
+                computeScaleFactor(deltaPos);
                 bsp.m_AnimDeltaPos.push_back(deltaPos);
                 bsp.m_AnimDeltaNor.push_back(deltaNor);
             }

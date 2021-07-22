@@ -65,6 +65,7 @@ protected:
     void processMesh(aiMesh *mesh, const aiScene *scene);
 
 private:
+    void computeScaleFactor(QVector3D&);
     QVector<VertexData> vertices;
     QVector<GLuint> indices;
 
@@ -83,7 +84,7 @@ public:
     QString modelFilePath;
     QVector<BlendShapePosition> m_blendShapeData;
     unsigned int m_NumBlendShape;
-    float scaleFactor = 0.0;
+    QVector3D scaleFactor;
     unsigned int m_MaxNumBlendShape = 4;
     Animator animator;
 };

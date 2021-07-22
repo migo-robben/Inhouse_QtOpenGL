@@ -79,7 +79,9 @@ void GLWidget::paintGL() {
     SHADER(0)->setUniformValueArray("finalBonesMatrices", transforms.data(), transforms.size());
     SHADER(0)->setUniformValueArray("BlendShapeWeight", customGeometry->animator.bsWeights.data(), customGeometry->animator.bsWeights.count(), 1);
     SHADER(0)->setUniformValue("BlendShapeNum", customGeometry->m_NumBlendShape);
-    SHADER(0)->setUniformValue("iScaleFactor", iScaleFactor);
+    SHADER(0)->setUniformValue("ScaleFactorX", scaleFactorX);
+    SHADER(0)->setUniformValue("ScaleFactorY", scaleFactorY);
+    SHADER(0)->setUniformValue("ScaleFactorZ", scaleFactorZ);
     SHADER(0)->setUniformValue("Precision", precision);
 
     blendShapeTex->bind(0);
@@ -116,11 +118,13 @@ void GLWidget::createBlendShapeTex() {
     blendShapeTex->setLayers(bsNum);
     blendShapeTex->allocateStorage(QOpenGLTexture::RGBA, QOpenGLTexture::Float32);
 
-    // TODO v3 scale factor
-    iScaleFactor = std::pow(2, int(customGeometry->scaleFactor/2) + 1);
+    scaleFactorX = std::pow(2, int(std::round(customGeometry->scaleFactor.x()/2.0f) + 1));
+    scaleFactorY = std::pow(2, int(std::round(customGeometry->scaleFactor.y()/2.0f) + 1));
+    scaleFactorZ = std::pow(2, int(std::round(customGeometry->scaleFactor.z()/2.0f) + 1));
+
     qDebug() << "lengthBSD: " << lengthBSD;
-    qDebug() << "iScaleFactor: " << iScaleFactor;
     qDebug() << "precision: " << precision;
+    qDebug() << "scaleFactor: " << scaleFactorX << scaleFactorY << scaleFactorZ;
     for(int i=0; i<bsNum;i++){
         int halfIndex = precision*precision/2;
         QVector<unsigned char> bsDataUc;
@@ -141,8 +145,11 @@ void GLWidget::createBlendShapeTex() {
             verData = QVector4D(0.0, 0.0, 0.0, 1.0);
             norData = QVector4D(0.0, 0.0, 0.0, 1.0);
             if(j<lengthBSD){
-                QVector3D deltaPos = (customGeometry->m_blendShapeData[j].m_AnimDeltaPos[i] / float(iScaleFactor) + QVector3D(1.0, 1.0, 1.0)) / 2.0;
-                QVector3D deltaNor = (customGeometry->m_blendShapeData[j].m_AnimDeltaNor[i] / float(iScaleFactor) + QVector3D(1.0, 1.0, 1.0)) / 2.0;
+                QVector3D deltaPos = (QVector3D(customGeometry->m_blendShapeData[j].m_AnimDeltaPos[i].x() / float(scaleFactorX),
+                                                customGeometry->m_blendShapeData[j].m_AnimDeltaPos[i].y() / float(scaleFactorY),
+                                                customGeometry->m_blendShapeData[j].m_AnimDeltaPos[i].z() / float(scaleFactorZ))
+                                                        + QVector3D(1.0, 1.0, 1.0)) / 2.0;
+                QVector3D deltaNor = (customGeometry->m_blendShapeData[j].m_AnimDeltaNor[i] + QVector3D(1.0, 1.0, 1.0)) / 2.0;
                 verData = QVector4D(deltaPos, 1.0f);
                 norData = QVector4D(deltaNor, 1.0f);
             }
