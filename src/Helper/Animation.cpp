@@ -13,16 +13,18 @@ Animation::Animation(QString &animationPath, CustomGeometry* model) {
         return;
     }
 
-    auto animation = scene->mAnimations[0];
-    m_Duration = animation->mDuration;
-
-    m_TicksPerSecond = animation->mTicksPerSecond;
-
     readHierarchyData(m_RootNode, scene->mRootNode);
-    setupBones(animation, model);
-    setupBlendShape(animation, model);
 
-    qDebug() << "Duration:" << m_Duration << "," << "Fps:" << m_TicksPerSecond;
+    if(scene->mNumAnimations){
+        auto animation = scene->mAnimations[0];
+        m_Duration = animation->mDuration;
+
+        m_TicksPerSecond = animation->mTicksPerSecond;
+        setupBones(animation, model);
+        setupBlendShape(animation, model);
+
+        qDebug() << "Duration:" << m_Duration << "," << "Fps:" << m_TicksPerSecond;
+    }
 }
 
 void Animation::readHierarchyData(AssimpNodeData &dest, const aiNode *src) {
@@ -50,7 +52,7 @@ QMatrix4x4 Animation::convertAIMatrixToQtFormat(const aiMatrix4x4 &from) {
 
 void Animation::setupBones(const aiAnimation *animation, CustomGeometry* model) {
     int size = animation->mNumChannels;
-
+    qDebug() << "animation num channels: " << size;
     auto& boneInfoMap = model->getOffsetMatMap();
     int& boneCount = model->getBoneCount();
 
@@ -63,7 +65,6 @@ void Animation::setupBones(const aiAnimation *animation, CustomGeometry* model) 
             boneInfoMap[boneName].id = boneCount;
             boneCount++;
         }
-
         m_Bones.push_back(Bone(boneName, boneInfoMap[channel->mNodeName.data].id, channel));
     }
 
@@ -71,20 +72,27 @@ void Animation::setupBones(const aiAnimation *animation, CustomGeometry* model) 
 }
 
 void Animation::setupBlendShape(const aiAnimation *animation, CustomGeometry *model) {
+    qDebug() << "NumMorphMeshChannels: " << animation->mNumMorphMeshChannels;
+    m_keyMorph.resize(animation->mNumMorphMeshChannels);
+
     if(animation->mNumMorphMeshChannels){
-        auto& channel = animation->mMorphMeshChannels[0];
-        if(channel->mNumKeys){
-            for(int i=0;i<channel->mNumKeys; ++i){
-                KeyMorph morph{};
-                auto& key = channel->mKeys[i];
-                morph.m_NumValuesAndWeights = key.mNumValuesAndWeights;
-                morph.m_Time = key.mTime;
-                morph.m_Weights = new double[key.mNumValuesAndWeights];
-                morph.m_Values = new unsigned int[key.mNumValuesAndWeights];
-                // the length of same with mNumAnimMesh or mNumValuesAndWeights?
-                std::copy(key.mWeights, key.mWeights+key.mNumValuesAndWeights, morph.m_Weights);
-                std::copy(key.mValues, key.mValues+key.mNumValuesAndWeights, morph.m_Values);
-                m_keyMorph.push_back(morph);
+
+        for(int j=0;j<animation->mNumMorphMeshChannels;j++){
+        auto& channel = animation->mMorphMeshChannels[j];
+            if(channel->mNumKeys) {
+                QVector<KeyMorph> keyMorph;
+                for (int i = 0; i < channel->mNumKeys; ++i) {
+                    KeyMorph morph{};
+                    auto &key = channel->mKeys[i];
+                    morph.m_NumValuesAndWeights = key.mNumValuesAndWeights;  // same with bs length
+                    morph.m_Time = key.mTime;
+                    morph.m_Weights = new double[key.mNumValuesAndWeights];
+                    morph.m_Values = new unsigned int[key.mNumValuesAndWeights];
+                    std::copy(key.mWeights, key.mWeights + key.mNumValuesAndWeights, morph.m_Weights);
+                    std::copy(key.mValues, key.mValues + key.mNumValuesAndWeights, morph.m_Values);
+                    keyMorph.push_back(morph);
+                }
+                m_keyMorph[j] = keyMorph;
             }
         }
     }

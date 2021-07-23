@@ -15,6 +15,7 @@ struct VertexData
     QVector3D normal;
     QVector3D tangent;
     QVector3D bitangent;
+    QVector4D bsdata;
     QVector4D m_BoneIDs;
     QVector4D m_Weights;
     QVector3D ObjectSHCoefficient[9];

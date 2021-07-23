@@ -31,17 +31,20 @@ public:
     void initGeometry() override;
     void initAnimation();
     void initAnimator();
+
     QMap<QString, BoneInfo>& getOffsetMatMap() { return m_OffsetMatMap; }
     int& getBoneCount() { return m_BoneCount; }
+
     void extractBoneWeightForVertices(QVector<VertexData> &data, aiMesh* mesh, const aiScene* scene);
     void setVertexBoneDataToDefault(VertexData &data);
     QMatrix4x4 convertAIMatrixToQtFormat(const aiMatrix4x4& from);
     void setVertexBoneData(VertexData& vertex, int boneID, float weight);
     void initGeometry(QVector<QVector<QVector3D>> &ObjectSHCoefficient);
-
+    void initAllocate();
     void setupAttributePointer(QOpenGLShaderProgram *program) override;
     void setupAttributePointer(QOpenGLShaderProgram *program, bool RPT, int bandPower2);
-
+    void setupTransformationAttribute();
+    static int computeLevelByVCount(unsigned int, int);
     void drawGeometry(QOpenGLShaderProgram *program,
                       QMatrix4x4 model,
                       QMatrix4x4 view,
@@ -57,6 +60,11 @@ public:
 
     void setupObjectSHCoefficient(QVector<QVector<QVector3D>> &ObjectSHCoefficient);
 
+public:
+    void computeScaleFactor(QVector3D&);
+    void computeGeometryHierarchy(const aiNode*, QMatrix4x4);
+    QMap<QString, QMatrix4x4> m_geoMatrix;
+
 protected:
     QVector<VertexData> getVerticesData() override;
     QVector<GLuint> getIndices() override;
@@ -65,28 +73,32 @@ protected:
     void processMesh(aiMesh *mesh, const aiScene *scene);
 
 private:
-    void computeScaleFactor(QVector3D&);
     QVector<VertexData> vertices;
     QVector<GLuint> indices;
+    QMap<QString, QVector<unsigned int>> verticesSlice;
 
     // ----- Animation ----- //
+
     QMap<QString, BoneInfo> m_OffsetMatMap;
     int m_BoneCount = 0;
     int m_indexIncrease = 0;
-
+    QVector<BlendShapePosition> m_blendShapeData;
     QVector<QMatrix4x4> m_Transforms;
+
 public:
     Animation animation;
+    int m_animationNum = 0;
 
 public:
     unsigned int verticesCount;
     unsigned int indicesCount;
 
+    unsigned int m_BSID = 0;
+    QVector<QVector<BlendShapePosition>> m_BSDATA;
+
     QString modelFilePath;
-    QVector<BlendShapePosition> m_blendShapeData;
-    unsigned int m_NumBlendShape;
     QVector3D scaleFactor;
-    QVector<QVector3D> blendShapeSlice;
+    QVector<QVector4D> blendShapeSlice;
     Animator animator;
 };
 

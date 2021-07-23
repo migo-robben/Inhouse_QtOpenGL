@@ -43,8 +43,14 @@ void CustomGeometry::setupAttributePointer(QOpenGLShaderProgram *program) {
     program->enableAttributeArray(bitangentLocation);
     program->setAttributeBuffer(bitangentLocation, GL_FLOAT, offset, 3, sizeof(VertexData));
 
-    // Offset for boneIds
+    // Offset for blendShape data
     offset += sizeof(QVector3D);
+    int bsdataLocation = program->attributeLocation("aBlendShapeData");
+    program->enableAttributeArray(bsdataLocation);
+    program->setAttributeBuffer(bsdataLocation, GL_FLOAT, offset, 4, sizeof(VertexData));
+
+    // Offset for boneIds
+    offset += sizeof(QVector4D);
 
     int boneIdsLocation = program->attributeLocation("boneIds");
     program->enableAttributeArray(boneIdsLocation);
@@ -128,6 +134,10 @@ void CustomGeometry::initGeometry() {
     }
 
     m_indexIncrease = 0;
+    m_animationNum = scene->mNumAnimations;
+
+    // compute geometry transformation for fbx
+    computeGeometryHierarchy(scene->mRootNode, QMatrix4x4());
 
     // process ASSIMP's root node recursively
     processNode(scene->mRootNode, scene);
@@ -135,9 +145,11 @@ void CustomGeometry::initGeometry() {
     verticesCount = getVerticesData().length();
     indicesCount = getIndices().length();
 
-    qDebug() << "BlendShape Num: " << m_NumBlendShape;
+    qDebug() << "Bones Name: " << animation.getBoneIDMap().keys();
+    qDebug() << "NumAnimations: " << m_animationNum << " BoneCount: " << m_BoneCount;
     qDebug() << "Vertices Indices Count: " << verticesCount << indicesCount;
     qDebug() << "blendShapeSlice: " << blendShapeSlice;
+    qDebug() << "verticesSlice: " << verticesSlice;
 
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
 
@@ -173,7 +185,9 @@ void CustomGeometry::initGeometry(QVector<QVector<QVector3D>> &ObjectSHCoefficie
     // process ASSIMP's root node recursively
     processNode(scene->mRootNode, scene);
     setupObjectSHCoefficient(ObjectSHCoefficient);
+}
 
+void CustomGeometry::initAllocate() {
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
 
     vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
@@ -280,12 +294,12 @@ QMatrix4x4 CustomGeometry::convertAIMatrixToQtFormat(const aiMatrix4x4& from) {
 void CustomGeometry::extractBoneWeightForVertices(QVector<VertexData> &data, aiMesh* mesh, const aiScene* scene) {
     auto& boneInfoMap = m_OffsetMatMap;
     int& boneCount = m_BoneCount;
-
     for (int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex)
     {
         int boneID = -1;
         QString boneName(mesh->mBones[boneIndex]->mName.C_Str());
-        if (boneInfoMap.find(boneName) == boneInfoMap.end()) {
+
+        if (boneInfoMap.find(boneName) == boneInfoMap.end()) { // notfound
             BoneInfo newBoneInfo;
 
             newBoneInfo.id = boneCount;
@@ -304,9 +318,10 @@ void CustomGeometry::extractBoneWeightForVertices(QVector<VertexData> &data, aiM
         unsigned int numWeights = mesh->mBones[boneIndex]->mNumWeights;
         for (int weightIndex = 0; weightIndex < numWeights; ++weightIndex)
         {
-            int vertexId = weights[weightIndex].mVertexId;
+            int vertexId = weights[weightIndex].mVertexId+m_indexIncrease;
             float weight = weights[weightIndex].mWeight;
-            assert(vertexId <= vertices.size());
+            // FIXME is that necessary for the line of the follow, or consider we added m_indexIncrease
+            //assert(vertexId <= vertices.size());
             setVertexBoneData(data[vertexId], boneID, weight);
         }
     }
@@ -342,9 +357,22 @@ void CustomGeometry::computeScaleFactor(QVector3D& v){
 }
 
 void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
+    /*
+     * Notes:
+     *      FBX: if the mesh has no animation, no blendShape and no transformation and
+     *          the vertices data will only record the local position, need to get the transformation
+     *          from mRootNode -> mTransformation -> mChildren -> mTransformation ...
+     *          except Freeze transformation before we exported;
+     */
     float maxBs = -1.0;
     bool blendShapeUnsliced = true;
+    m_blendShapeData.clear();
+    int vlevel = computeLevelByVCount(mesh->mNumVertices, 2);
+    mesh->mNumBones; // it will be 0 if this mesh that doesn't have any bone influence with.
+                        // so we need multi-matrix transformation
+    QString qmeshName = QString(mesh->mName.data);
 
+    qDebug() << "circling mesh info: (name, numBone)" << qmeshName << mesh->mNumBones;
     // Walk through each of the mesh's vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
@@ -353,6 +381,7 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         QVector3D normal;
         QVector3D tangent;
         QVector3D bitangent;
+        QVector4D bsdata;
         VertexData data;
 
         setVertexBoneDataToDefault(data);
@@ -384,16 +413,21 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         bitangent.setY(mesh->mBitangents[i].y);
         bitangent.setZ(mesh->mBitangents[i].z);
 
+        bsdata.setX(mesh->mNumAnimMeshes);
+        bsdata.setY(mesh->mNumVertices);
+        bsdata.setZ(vlevel);
+        bsdata.setW(0.0f);
+
         data.position = pos;
         data.texCoord = tex;
         data.normal = normal;
         data.tangent = tangent;
         data.bitangent = bitangent;
+        data.bsdata = bsdata;
 
         // blendShape
         BlendShapePosition bsp;
         bsp.m_numAnimPos = mesh->mNumAnimMeshes;
-        m_NumBlendShape = bsp.m_numAnimPos;
         if(mesh->mNumAnimMeshes){
             unsigned int bsLen = mesh->mAnimMeshes[0]->mNumVertices;
             for(unsigned int b=0; b<mesh->mNumAnimMeshes;++b){
@@ -410,20 +444,21 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
                 bsp.m_AnimDeltaNor.push_back(deltaNor);
             }
             assert(bsp.m_numAnimPos == bsp.m_AnimDeltaPos.length());
+
             m_blendShapeData.push_back(bsp);
             if(blendShapeUnsliced){
-                float lastStar;
-                if(blendShapeSlice.empty()){
-                    lastStar = 0.0f;
-                }else{
-                    lastStar = blendShapeSlice[blendShapeSlice.length()-1].z() + bsLen;
-                }
-                blendShapeSlice.append(QVector3D(m_indexIncrease, m_indexIncrease+bsLen, lastStar));
+                blendShapeSlice.append(QVector4D(m_indexIncrease, m_indexIncrease+bsLen, m_BSID, 0));
                 blendShapeUnsliced = false;
             }
         }
 
         vertices.push_back(data);
+    }
+
+    // push blendshape data
+    if(mesh->mNumAnimMeshes){
+        m_BSDATA.push_back(m_blendShapeData);
+        ++m_BSID;
     }
 
     // now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
@@ -435,9 +470,11 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
             indices.push_back(face.mIndices[j] + m_indexIncrease);
     }
 
-    m_indexIncrease += mesh->mNumVertices;
-
     extractBoneWeightForVertices(vertices, mesh, scene);
+    verticesSlice[qmeshName] = QVector<unsigned int>{static_cast<unsigned int>(m_indexIncrease),
+                                                     m_indexIncrease + mesh->mNumVertices,
+                                                     mesh->mNumBones};
+    m_indexIncrease += mesh->mNumVertices;
 }
 
 void CustomGeometry::setupObjectSHCoefficient(QVector<QVector<QVector3D>> &ObjectSHCoefficient) {
@@ -451,3 +488,72 @@ void CustomGeometry::setupObjectSHCoefficient(QVector<QVector<QVector3D>> &Objec
         }
     }
 }
+
+int CustomGeometry::computeLevelByVCount(unsigned int vcount, int split_tile) {
+    int precision = 0;
+    for(int i=0; i<14;i++){  // 2^14=16384   16K max compute for now
+        int apart = std::pow(2, i);
+        if(apart*apart/split_tile > vcount){
+            precision = apart;
+            break;
+        }
+    }
+    return precision;
+}
+
+void CustomGeometry::computeGeometryHierarchy(const aiNode * parentNode, QMatrix4x4 parentTransform) {
+    unsigned int childrenCount = parentNode->mNumChildren;
+    QMatrix4x4 transformation = convertAIMatrixToQtFormat(parentNode->mTransformation);
+
+    QString name( parentNode->mName.data ) ;
+    if (m_geoMatrix.find(name) == m_geoMatrix.end() && parentNode->mNumMeshes){
+        m_geoMatrix[name] = QMatrix4x4();
+    }
+
+    transformation = parentTransform * transformation;
+
+    if(parentNode->mNumMeshes){
+        m_geoMatrix[name] = transformation * m_geoMatrix[name];
+    }
+
+    for (int i = 0; i < childrenCount; i++) {
+        computeGeometryHierarchy(parentNode->mChildren[i], transformation);
+    }
+}
+
+void CustomGeometry::setupTransformationAttribute() {
+    QMap<QString, BoneInfo> boneInfo = animation.getBoneIDMap();  // for fbx transformation animation,
+    // if the mesh name is same with bone name so we need to set BoneId and Weights as skeletal
+    QMapIterator<QString, QVector<unsigned int>> iter(verticesSlice);
+    while (iter.hasNext()) {
+        iter.next();
+        QString meshName = iter.key();
+        QVector<unsigned int> verSlice = iter.value();
+        unsigned int verStart = verSlice[0];
+        unsigned int verEnd = verSlice[1];
+        unsigned int verBoneNum = verSlice[2];
+        bool foundMeshBone = boneInfo.find(meshName) != boneInfo.end();
+
+        int meshBoneId = -1;
+        float meshBoneWeight = 0.0f;
+        if(foundMeshBone){
+            meshBoneId = boneInfo[meshName].id;
+            meshBoneWeight = 1.0f;
+        }
+        qDebug() << "setup trans attr: " << iter.key() << ": " << iter.value() << foundMeshBone << verBoneNum;
+        for(unsigned int i=verStart;i<verEnd;i++){
+            if(verBoneNum == 0){
+                auto & vertice = vertices[i];
+
+                if(foundMeshBone){
+                    vertice.m_BoneIDs.setX(meshBoneId);
+                    vertice.m_Weights.setX(meshBoneWeight);
+                }else
+                {  // if it wasn't effected by bone and transformation so we set parent transformation.
+                    vertice.position = m_geoMatrix[meshName] * vertices[i].position;
+                }
+            }
+        }
+    }
+}
+
