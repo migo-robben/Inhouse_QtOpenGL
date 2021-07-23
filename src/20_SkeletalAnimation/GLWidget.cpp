@@ -54,7 +54,7 @@ void GLWidget::initializeGL() {
     glSetting();
     initGeometry();
 
-    createBlendShapeTex();
+    createBlendShapeTex(true);
 
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &GLWidget::updateFrame);
@@ -77,16 +77,20 @@ void GLWidget::paintGL() {
 
     SHADER(0)->bind();
     SHADER(0)->setUniformValueArray("finalBonesMatrices", transforms.data(), transforms.size());
-    SHADER(0)->setUniformValueArray("BlendShapeWeight", customGeometry->animator.bsWeights.data(), customGeometry->animator.bsWeights.count(), 1);
-    SHADER(0)->setUniformValue("BlendShapeNum", customGeometry->m_NumBlendShape);
+    SHADER(0)->setUniformValueArray("BlendShapeWeight", customGeometry->animator.bsWeights.data(), customGeometry->animator.bsWeights.count());
+    SHADER(0)->setUniformValue("NumBlendShapeWeight", customGeometry->animator.bsWeights.count());
     SHADER(0)->setUniformValue("ScaleFactorX", scaleFactorX);
     SHADER(0)->setUniformValue("ScaleFactorY", scaleFactorY);
     SHADER(0)->setUniformValue("ScaleFactorZ", scaleFactorZ);
-    SHADER(0)->setUniformValue("Precision", precision);
     SHADER(0)->setUniformValueArray("BlendShapeSlice", customGeometry->blendShapeSlice.data(), customGeometry->blendShapeSlice.count());
 
-    blendShapeTex->bind(0);
-    SHADER(0)->setUniformValue("blendShapeMap", 0);
+    //blendShapeTex->bind(0);
+    //SHADER(0)->setUniformValue("blendShapeMap", 0);
+    for (int i=0; i<blendShapeTexs.count(); i++) {
+        QString bsMap = QString("blendShapeMap[") + QString::number(i) + QString("]");
+        blendShapeTexs[i]->bind(i);
+        SHADER(0)->setUniformValue(bsMap.toStdString().c_str(), i);
+    }
 
     model.setToIdentity();
     model.translate(QVector3D(0.0, -1.0, 0.0));
@@ -100,73 +104,91 @@ void GLWidget::paintGL() {
             camera->getCameraProjection());
 }
 
-void GLWidget::createBlendShapeTex() {
-    // TODO using sqrt
-    for(int i=0; i<14;i++){
-        int apart = std::pow(2, i);
-        if(apart*apart/2 > customGeometry->verticesCount){
-            precision = apart;
-            break;
-        }
-    }
+void GLWidget::createBlendShapeTex(bool write2disk) {
+    int bsDataLength = customGeometry->m_BSDATA.length();
+    qDebug() << "********** BlendShape Tex **********";
+    qDebug() << "BlendShapeDataLength: " << bsDataLength;
 
-    int lengthBSD = customGeometry->m_blendShapeData.length();
-    int bsNum = customGeometry->m_NumBlendShape;
-    int texDepth = 4;
+    assert(bsDataLength == customGeometry->m_BSID);
 
-    blendShapeTex->create();
-    blendShapeTex->setFormat(QOpenGLTexture::RGBA32F);
-    blendShapeTex->setSize(precision, precision, 3);
-    blendShapeTex->setLayers(bsNum);
-    blendShapeTex->allocateStorage(QOpenGLTexture::RGBA, QOpenGLTexture::Float32);
+    for(int z=0;z<customGeometry->m_BSDATA.length();z++){
+        QVector<BlendShapePosition> currentBsData = customGeometry->m_BSDATA[z];
+        int currLenBsVertex = currentBsData.length();
+        int currBsNum = currentBsData[0].m_numAnimPos;
+        int texDepth = 4;
+        int precision = CustomGeometry::computeLevelByVCount(currLenBsVertex, 2);
 
-    scaleFactorX = std::pow(2, int(std::round(customGeometry->scaleFactor.x()/2.0f) + 1));
-    scaleFactorY = std::pow(2, int(std::round(customGeometry->scaleFactor.y()/2.0f) + 1));
-    scaleFactorZ = std::pow(2, int(std::round(customGeometry->scaleFactor.z()/2.0f) + 1));
+        QOpenGLTexture* blendShapeTex = new QOpenGLTexture(QOpenGLTexture::Target::Target2DArray);
+        blendShapeTex->create();
+        blendShapeTex->setFormat(QOpenGLTexture::RGBA32F);
+        blendShapeTex->setSize(precision, precision, 3);
+        blendShapeTex->setLayers(currBsNum);
+        blendShapeTex->allocateStorage(QOpenGLTexture::RGBA, QOpenGLTexture::Float32);
 
-    qDebug() << "lengthBlendShapeData: " << lengthBSD;
-    qDebug() << "precision: " << precision;
-    qDebug() << "scaleFactor: " << scaleFactorX << scaleFactorY << scaleFactorZ;
-    for(int i=0; i<bsNum;i++){
-        int halfIndex = precision*precision/2;
-        QVector<unsigned char> bsDataUc;
-        QVector<QVector4D> bsData;
+        scaleFactorX = std::pow(2, int(std::round(customGeometry->scaleFactor.x()/2.0f) + 1));
+        scaleFactorY = std::pow(2, int(std::round(customGeometry->scaleFactor.y()/2.0f) + 1));
+        scaleFactorZ = std::pow(2, int(std::round(customGeometry->scaleFactor.z()/2.0f) + 1));
 
-        bsDataUc.resize(precision*precision*texDepth);
-        bsDataUc.fill(0);
-        bsData.resize(precision*precision);
-        QVector4D empty(0.0, 0.0, 0.0, 1.0);
-        bsData.fill(empty);
+        qDebug() << "precision: " << precision;
+        qDebug() << "scaleFactor: " << scaleFactorX << scaleFactorY << scaleFactorZ;
+        qDebug() << "currLenBsVertex: " << currLenBsVertex << " currBsNum: " << currBsNum;
+        for(int i=0; i<currBsNum;i++){
+            int halfIndex = precision*precision/2;
+            QVector<unsigned char> bsDataUc;
+            QVector<QVector4D> bsData;
 
-        for(int j=0; j<precision*precision; j++){
-            if(j == halfIndex)
-                break;
+            bsDataUc.resize(precision*precision*texDepth);
+            bsDataUc.fill(0);
+            bsData.resize(precision*precision);
+            QVector4D empty(0.0, 0.0, 0.0, 1.0);
+            bsData.fill(empty);
 
-            QVector4D verData;
-            QVector4D norData;
-            verData = QVector4D(0.0, 0.0, 0.0, 1.0);
-            norData = QVector4D(0.0, 0.0, 0.0, 1.0);
-            if(j<lengthBSD){
-                QVector3D deltaPos = (QVector3D(customGeometry->m_blendShapeData[j].m_AnimDeltaPos[i].x() / float(scaleFactorX),
-                                                customGeometry->m_blendShapeData[j].m_AnimDeltaPos[i].y() / float(scaleFactorY),
-                                                customGeometry->m_blendShapeData[j].m_AnimDeltaPos[i].z() / float(scaleFactorZ))
-                                                        + QVector3D(1.0, 1.0, 1.0)) / 2.0;
-                QVector3D deltaNor = (customGeometry->m_blendShapeData[j].m_AnimDeltaNor[i] + QVector3D(1.0, 1.0, 1.0)) / 2.0;
-                verData = QVector4D(deltaPos, 1.0f);
-                norData = QVector4D(deltaNor, 1.0f);
+            for(int j=0; j<precision*precision; j++){
+                if(j == halfIndex)
+                    break;
+
+                QVector4D verData;
+                QVector4D norData;
+                verData = QVector4D(0.0, 0.0, 0.0, 1.0);
+                norData = QVector4D(0.0, 0.0, 0.0, 1.0);
+                if(j<currLenBsVertex){
+                    QVector3D deltaPos = (QVector3D(currentBsData[j].m_AnimDeltaPos[i].x() / float(scaleFactorX),
+                                                    currentBsData[j].m_AnimDeltaPos[i].y() / float(scaleFactorY),
+                                                    currentBsData[j].m_AnimDeltaPos[i].z() / float(scaleFactorZ))
+                                                            + QVector3D(1.0, 1.0, 1.0)) / 2.0;
+                    QVector3D deltaNor = (currentBsData[j].m_AnimDeltaNor[i] + QVector3D(1.0, 1.0, 1.0)) / 2.0;
+                    verData = QVector4D(deltaPos, 1.0f);
+                    norData = QVector4D(deltaNor, 1.0f);
+                }
+
+                bsData[j] = verData;
+                bsData[halfIndex+j] = norData;
+                // Debug
+                if(write2disk) {
+                    bsDataUc[j * 4 + 0] = verData.x() * 255;
+                    bsDataUc[j * 4 + 1] = verData.y() * 255;
+                    bsDataUc[j * 4 + 2] = verData.z() * 255;
+                    bsDataUc[j * 4 + 3] = 255;
+                    bsDataUc[(halfIndex + j) * 4 + 0] = norData.x() * 255;
+                    bsDataUc[(halfIndex + j) * 4 + 1] = norData.y() * 255;
+                    bsDataUc[(halfIndex + j) * 4 + 2] = norData.z() * 255;
+                    bsDataUc[(halfIndex + j) * 4 + 3] = 255;
+                }
             }
-
-            bsData[j] = verData;
-            bsData[halfIndex+j] = norData;
-            // Debug
-            //bsDataUc[j*4+0] = verData.x()*255; bsDataUc[j*4+1] = verData.y()*255;  bsDataUc[j*4+2] = verData.z()*255;  bsDataUc[j*4+3] = 255;
-            //bsDataUc[(halfIndex+j)*4+0] = norData.x()*255; bsDataUc[(halfIndex+j)*4+1] = norData.y()*255; bsDataUc[(halfIndex+j)*4+2] = norData.z()*255; bsDataUc[(halfIndex+j)*4+3] = 255;
+            // Write to disk
+            if(write2disk){
+                QImage image(bsDataUc.data(), precision, precision, QImage::Format_RGBA8888);
+                image.save(QString("src/20_SkeletalAnimation/resource/blendShapeTex")
+                    +QString::number(z)
+                    +QString("_")
+                    +QString::number(i)
+                    +QString(".png"));
+            }
+            blendShapeTex->setData(0, i, QOpenGLTexture::RGBA,QOpenGLTexture::Float32, bsData.constData());
         }
-        // Write to disk
-        //QImage image(bsDataUc.data(), precision, precision, QImage::Format_RGBA8888);
-        //image.save(QString("src/20_SkeletalAnimation/resource/blendShapeTex")+QString::number(i)+QString(".png"));
-        blendShapeTex->setData(0, i, QOpenGLTexture::RGBA,QOpenGLTexture::Float32, bsData.constData());
+        blendShapeTexs.push_back(blendShapeTex);
     }
+    qDebug() << "*********************";
 }
 
 void GLWidget::resizeGL(int width, int height) {
@@ -210,7 +232,7 @@ void GLWidget::initShaders() {
 }
 
 void GLWidget::initGeometry() {
-    customGeometry = new CustomGeometry(QString("src/20_SkeletalAnimation/resource/testBlendShape.fbx")); // dancing_vampire
+    customGeometry = new CustomGeometry(QString("src/20_SkeletalAnimation/resource/testBlendShapePart.fbx")); // dancing_vampire
     customGeometry->initGeometry();
     customGeometry->initAnimation();
     customGeometry->initAnimator();
@@ -219,7 +241,7 @@ void GLWidget::initGeometry() {
 
 void GLWidget::initTexture() {
     diffuseTexture = new QOpenGLTexture(QImage(QString("src/20_SkeletalAnimation/resource/vampire/textures/Pure.png")));
-    blendShapeTex = new QOpenGLTexture(QOpenGLTexture::Target::Target2DArray);
+    //blendShapeTex = new QOpenGLTexture(QOpenGLTexture::Target::Target2DArray);
 }
 
 void GLWidget::glSetting() {

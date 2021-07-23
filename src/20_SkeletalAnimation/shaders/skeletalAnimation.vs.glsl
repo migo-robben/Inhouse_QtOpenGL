@@ -5,8 +5,9 @@ layout (location = 1) in vec2 aCoord;
 layout (location = 2) in vec3 aNormal;
 layout (location = 3) in vec3 aTangent;
 layout (location = 4) in vec3 aBitangent;
-layout (location = 5) in vec4 boneIds;
-layout (location = 6) in vec4 weights;
+layout (location = 5) in vec4 aBlendShapeData;
+layout (location = 6) in vec4 boneIds;
+layout (location = 7) in vec4 weights;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -14,18 +15,18 @@ uniform mat4 projection;
 
 const int MAX_BONES = 100;
 const int MAX_BLENDSHAPE = 100;
+const int MAX_BLENDPART = 20;
 const int MAX_BONE_INFLUENCE = 4;
 uniform mat4 finalBonesMatrices[MAX_BONES];
 
-uniform int BlendShapeNum;
 uniform int ScaleFactorX;
 uniform int ScaleFactorY;
 uniform int ScaleFactorZ;
-uniform float BlendShapeWeight[MAX_BLENDSHAPE];
-uniform vec3 BlendShapeSlice[MAX_BLENDSHAPE];
-uniform sampler2DArray blendShapeMap;
-
-uniform int Precision;
+uniform int NumBlendShapeWeight;
+uniform vec2 BlendShapeWeight[MAX_BLENDSHAPE];
+uniform vec4 BlendShapeSlice[MAX_BLENDSHAPE];
+uniform vec2 BlendShapePrecision[MAX_BLENDSHAPE];
+uniform sampler2DArray blendShapeMap[MAX_BLENDPART];
 
 uniform sampler2D HeightMap1;
 
@@ -36,25 +37,29 @@ out vec3 WorldPos;
 out vec3 Normal;
 out vec3 DebugColor;
 
-int getRealVertexID4BS(int vs_id){
-    int real_vs_id = vs_id;
-    for(int i=0;i<BlendShapeNum;i++){
+ivec2 getBlendShapeIDs(int vs_id){
+    int final_vs_id = -1;
+    int final_map_id = -1;
+    int bsNum = int(aBlendShapeData.x);
+    for(int i=0;i<bsNum;i++){
         int head = int(BlendShapeSlice[i].x);
         int end = int(BlendShapeSlice[i].y);
-        int bs_pos = int(BlendShapeSlice[i].z);
+        int bs_map_id = int(BlendShapeSlice[i].z);
+        int bs_length = end - head;
+
         int diff = vs_id - head;
-        if(diff >= head && diff <= end){
-            real_vs_id = diff + bs_pos;
+        if(vs_id >= head && vs_id < end){
+            final_vs_id = diff;
+            final_map_id = bs_map_id;
             break;
         }
     }
-    return real_vs_id;
+    return ivec2(final_vs_id, final_map_id);
 }
 
 void main() {
     coord = aCoord;
 
-    int halfIndex = Precision*Precision/2;
     ivec4 BoneIds = ivec4(int(boneIds.x), int(boneIds.y), int(boneIds.z), int(boneIds.w));
     vec3 BsMapPos = vec3(0.0);
     vec3 BsMapNor = vec3(0.0);
@@ -62,31 +67,52 @@ void main() {
     float height = 0.0;
     float hscale = 0.0;
     float bsscale = 0.0;
+    vec4 bsdebugcolor = vec4(0.0, 0.0, 0.0, 0.0);
 
     // Height map
     height = hscale * ((texture2D(HeightMap1, aCoord).r) - bias);
     vec3 hnormal = vec3(aNormal.x*height, aNormal.y*height, aNormal.z*height);
 
-    // BlendShape UV
-    int vertexId4BS = getRealVertexID4BS(gl_VertexID);
-    int u = int(vertexId4BS % Precision);
-    int v = int(vertexId4BS / Precision);
-    ivec2 bsCoord = ivec2(u, v);
-    vec2 bsCoordf = vec2(u/float(Precision), v/float(Precision));
-    int u1 = int((vertexId4BS + halfIndex) % Precision);
-    int v1 = int((vertexId4BS + halfIndex) / Precision);
-    ivec2 bsCoord1 = ivec2(u1, v1);
+    // BlendShape
+    int Precision = int(aBlendShapeData.z);
+    ivec2 blendShapeIDs = getBlendShapeIDs(gl_VertexID);
+    int bsVsID = blendShapeIDs.x;
+    int bsMapID = blendShapeIDs.y;
+    if(bsVsID != -1
+        //&& bsMapID == 1 // for debug single blendshape
+    ){
+        int halfIndex = Precision*Precision/2;
+        int u = int(bsVsID % Precision);
+        int v = int(bsVsID / Precision);
+        ivec2 bsCoord = ivec2(u, v);
+        vec2 bsCoordf = vec2(u/float(Precision), v/float(Precision));
+        int u1 = int((bsVsID + halfIndex) % Precision);
+        int v1 = int((bsVsID + halfIndex) / Precision);
+        ivec2 bsCoord1 = ivec2(u1, v1);
+        int blendShapeNum = int(aBlendShapeData.x);
 
-    // Compute BlendShape pos and Normal
-    for(int i=0; i < BlendShapeNum; i++){
-        vec3 texBs = texelFetch(blendShapeMap, ivec3(bsCoord, i), 0).rgb * 2 - vec3(1.0);
-        BsMapPos += vec3(texBs.r * ScaleFactorX, texBs.g * ScaleFactorY, texBs.b * ScaleFactorZ) * BlendShapeWeight[i];
-        BsMapNor += (texelFetch(blendShapeMap, ivec3(bsCoord1, i), 0).rgb * 2 - vec3(1.0)) * BlendShapeWeight[i];
+        // Compute BlendShape pos and Normal
+        for(int i=0; i < NumBlendShapeWeight; i++){
+            vec2 bsWeightData = BlendShapeWeight[i];
+            int bsMapID_iner = int(bsWeightData.x);
+
+            if(bsMapID_iner == bsMapID){
+                for(int j=0;j<blendShapeNum;j++){
+                    float bsWeight = BlendShapeWeight[i+j].y;
+
+                    vec3 texBs = texelFetch(blendShapeMap[bsMapID], ivec3(bsCoord, j), 0).rgb * 2 - vec3(1.0);
+                    BsMapPos += vec3(texBs.r * ScaleFactorX, texBs.g * ScaleFactorY, texBs.b * ScaleFactorZ) * bsWeight;
+                    BsMapNor += (texelFetch(blendShapeMap[bsMapID], ivec3(bsCoord1, j), 0).rgb * 2 - vec3(1.0)) * bsWeight;
+                }
+
+                break;
+            }
+        }
     }
 
     // Debug
-    //vec4 bsdebugcolor = texture(blendShapeMap, vec3(bsCoordf, 0));
-    //DebugColor = vec3(1,1,1);
+    //bsdebugcolor = texture(blendShapeMap, vec3(bsCoordf, 0));
+    DebugColor = vec3(aNormal);
 
     vec4 totalPosition = vec4(0.0f);
     vec3 localNormal = vec3(0.0f);

@@ -14,13 +14,13 @@ public:
     explicit Animator(Animation* current, CustomGeometry* geometry, int& boneCount);
     void updateAnimation(float dt);
     void calculateBoneTransform(const AssimpNodeData* node, QMatrix4x4 parentTransform);
-    void calculateBlendShapePosition(QVector<KeyMorph>);
+    void calculateBlendShapePosition(QVector<QVector<KeyMorph>>);
     QVector<QMatrix4x4> getPoseTransforms() {
         return m_Transforms;
     }
 
 public:
-    QVector<float> bsWeights;
+    QVector<QVector2D> bsWeights;
 
 private:
     QVector<QMatrix4x4> m_Transforms;

@@ -43,11 +43,10 @@ protected:
 
     void glSetting();
 
-    int precision;
     unsigned int scaleFactorX;
     unsigned int scaleFactorY;
     unsigned int scaleFactorZ;
-    void createBlendShapeTex();
+    void createBlendShapeTex(bool);
 
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
@@ -58,7 +57,8 @@ private:
     QList<QOpenGLShaderProgram*> programs;
     CustomGeometry *customGeometry;
     QOpenGLTexture *diffuseTexture;
-    QOpenGLTexture *blendShapeTex;
+    //QOpenGLTexture *blendShapeTex;
+    QVector<QOpenGLTexture*> blendShapeTexs;
 
     Camera *camera;
     QMatrix4x4 model;

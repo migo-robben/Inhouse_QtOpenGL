@@ -43,8 +43,14 @@ void CustomGeometry::setupAttributePointer(QOpenGLShaderProgram *program) {
     program->enableAttributeArray(bitangentLocation);
     program->setAttributeBuffer(bitangentLocation, GL_FLOAT, offset, 3, sizeof(VertexData));
 
-    // Offset for boneIds
+    // Offset for blendShape data
     offset += sizeof(QVector3D);
+    int bsdataLocation = program->attributeLocation("aBlendShapeData");
+    program->enableAttributeArray(bsdataLocation);
+    program->setAttributeBuffer(bsdataLocation, GL_FLOAT, offset, 4, sizeof(VertexData));
+
+    // Offset for boneIds
+    offset += sizeof(QVector4D);
 
     int boneIdsLocation = program->attributeLocation("boneIds");
     program->enableAttributeArray(boneIdsLocation);
@@ -135,7 +141,6 @@ void CustomGeometry::initGeometry() {
     verticesCount = getVerticesData().length();
     indicesCount = getIndices().length();
 
-    qDebug() << "BlendShape Num: " << m_NumBlendShape;
     qDebug() << "Vertices Indices Count: " << verticesCount << indicesCount;
     qDebug() << "blendShapeSlice: " << blendShapeSlice;
 
@@ -285,7 +290,8 @@ void CustomGeometry::extractBoneWeightForVertices(QVector<VertexData> &data, aiM
     {
         int boneID = -1;
         QString boneName(mesh->mBones[boneIndex]->mName.C_Str());
-        if (boneInfoMap.find(boneName) == boneInfoMap.end()) {
+
+        if (boneInfoMap.find(boneName) == boneInfoMap.end()) { // notfound
             BoneInfo newBoneInfo;
 
             newBoneInfo.id = boneCount;
@@ -304,9 +310,9 @@ void CustomGeometry::extractBoneWeightForVertices(QVector<VertexData> &data, aiM
         unsigned int numWeights = mesh->mBones[boneIndex]->mNumWeights;
         for (int weightIndex = 0; weightIndex < numWeights; ++weightIndex)
         {
-            int vertexId = weights[weightIndex].mVertexId;
+            int vertexId = weights[weightIndex].mVertexId+m_indexIncrease;
             float weight = weights[weightIndex].mWeight;
-            assert(vertexId <= vertices.size());
+//            assert(vertexId <= vertices.size());
             setVertexBoneData(data[vertexId], boneID, weight);
         }
     }
@@ -344,6 +350,8 @@ void CustomGeometry::computeScaleFactor(QVector3D& v){
 void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
     float maxBs = -1.0;
     bool blendShapeUnsliced = true;
+    m_blendShapeData.clear();
+    int vlevel = computeLevelByVCount(mesh->mNumVertices, 2);
 
     // Walk through each of the mesh's vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; i++)
@@ -353,6 +361,7 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         QVector3D normal;
         QVector3D tangent;
         QVector3D bitangent;
+        QVector4D bsdata;
         VertexData data;
 
         setVertexBoneDataToDefault(data);
@@ -384,16 +393,21 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         bitangent.setY(mesh->mBitangents[i].y);
         bitangent.setZ(mesh->mBitangents[i].z);
 
+        bsdata.setX(mesh->mNumAnimMeshes);
+        bsdata.setY(mesh->mNumVertices);
+        bsdata.setZ(vlevel);
+        bsdata.setW(0.0f);
+
         data.position = pos;
         data.texCoord = tex;
         data.normal = normal;
         data.tangent = tangent;
         data.bitangent = bitangent;
+        data.bsdata = bsdata;
 
         // blendShape
         BlendShapePosition bsp;
         bsp.m_numAnimPos = mesh->mNumAnimMeshes;
-        m_NumBlendShape = bsp.m_numAnimPos;
         if(mesh->mNumAnimMeshes){
             unsigned int bsLen = mesh->mAnimMeshes[0]->mNumVertices;
             for(unsigned int b=0; b<mesh->mNumAnimMeshes;++b){
@@ -410,20 +424,21 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
                 bsp.m_AnimDeltaNor.push_back(deltaNor);
             }
             assert(bsp.m_numAnimPos == bsp.m_AnimDeltaPos.length());
+
             m_blendShapeData.push_back(bsp);
             if(blendShapeUnsliced){
-                float lastStar;
-                if(blendShapeSlice.empty()){
-                    lastStar = 0.0f;
-                }else{
-                    lastStar = blendShapeSlice[blendShapeSlice.length()-1].z() + bsLen;
-                }
-                blendShapeSlice.append(QVector3D(m_indexIncrease, m_indexIncrease+bsLen, lastStar));
+                blendShapeSlice.append(QVector4D(m_indexIncrease, m_indexIncrease+bsLen, m_BSID, 0));
                 blendShapeUnsliced = false;
             }
         }
 
         vertices.push_back(data);
+    }
+
+    // push blendshape data
+    if(mesh->mNumAnimMeshes){
+        m_BSDATA.push_back(m_blendShapeData);
+        ++m_BSID;
     }
 
     // now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
@@ -435,9 +450,9 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
             indices.push_back(face.mIndices[j] + m_indexIncrease);
     }
 
-    m_indexIncrease += mesh->mNumVertices;
-
     extractBoneWeightForVertices(vertices, mesh, scene);
+
+    m_indexIncrease += mesh->mNumVertices;
 }
 
 void CustomGeometry::setupObjectSHCoefficient(QVector<QVector<QVector3D>> &ObjectSHCoefficient) {
@@ -450,4 +465,16 @@ void CustomGeometry::setupObjectSHCoefficient(QVector<QVector<QVector3D>> &Objec
             vertices[i].ObjectSHCoefficient[j] = ObjectSHCoefficient[i][j];
         }
     }
+}
+
+int CustomGeometry::computeLevelByVCount(unsigned int vcount, int split_tile) {
+    int precision = 0;
+    for(int i=0; i<14;i++){  // 2^14=16384   16K max compute for now
+        int apart = std::pow(2, i);
+        if(apart*apart/split_tile > vcount){
+            precision = apart;
+            break;
+        }
+    }
+    return precision;
 }

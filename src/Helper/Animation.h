@@ -41,13 +41,13 @@ public:
     inline float getDuration() { return m_Duration; }
     inline const AssimpNodeData& getRootNode() { return m_RootNode; }
     inline const QMap<QString, BoneInfo>& getBoneIDMap() { return m_BoneInfoMap; }
-    inline const QVector<KeyMorph>* getKeyMorph() { return &m_keyMorph; }
+    inline const QVector<QVector<KeyMorph>> getKeyMorph() { return m_keyMorph; }
 
 private:
     double m_Duration;
     double m_TicksPerSecond;
 
-    QVector<KeyMorph> m_keyMorph;
+    QVector<QVector<KeyMorph>> m_keyMorph;
     AssimpNodeData m_RootNode;
     QVector<Bone> m_Bones;
     QMap<QString, BoneInfo> m_BoneInfoMap;

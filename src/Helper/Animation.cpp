@@ -71,20 +71,27 @@ void Animation::setupBones(const aiAnimation *animation, CustomGeometry* model) 
 }
 
 void Animation::setupBlendShape(const aiAnimation *animation, CustomGeometry *model) {
+    qDebug() << "NumMorphMeshChannels: " << animation->mNumMorphMeshChannels;
+    m_keyMorph.resize(animation->mNumMorphMeshChannels);
+
     if(animation->mNumMorphMeshChannels){
-        auto& channel = animation->mMorphMeshChannels[0];
-        if(channel->mNumKeys){
-            for(int i=0;i<channel->mNumKeys; ++i){
-                KeyMorph morph{};
-                auto& key = channel->mKeys[i];
-                morph.m_NumValuesAndWeights = key.mNumValuesAndWeights;
-                morph.m_Time = key.mTime;
-                morph.m_Weights = new double[key.mNumValuesAndWeights];
-                morph.m_Values = new unsigned int[key.mNumValuesAndWeights];
-                // the length of same with mNumAnimMesh or mNumValuesAndWeights?
-                std::copy(key.mWeights, key.mWeights+key.mNumValuesAndWeights, morph.m_Weights);
-                std::copy(key.mValues, key.mValues+key.mNumValuesAndWeights, morph.m_Values);
-                m_keyMorph.push_back(morph);
+
+        for(int j=0;j<animation->mNumMorphMeshChannels;j++){
+        auto& channel = animation->mMorphMeshChannels[j];
+            if(channel->mNumKeys) {
+                QVector<KeyMorph> keyMorph;
+                for (int i = 0; i < channel->mNumKeys; ++i) {
+                    KeyMorph morph{};
+                    auto &key = channel->mKeys[i];
+                    morph.m_NumValuesAndWeights = key.mNumValuesAndWeights;  // same with bs length
+                    morph.m_Time = key.mTime;
+                    morph.m_Weights = new double[key.mNumValuesAndWeights];
+                    morph.m_Values = new unsigned int[key.mNumValuesAndWeights];
+                    std::copy(key.mWeights, key.mWeights + key.mNumValuesAndWeights, morph.m_Weights);
+                    std::copy(key.mValues, key.mValues + key.mNumValuesAndWeights, morph.m_Values);
+                    keyMorph.push_back(morph);
+                }
+                m_keyMorph[j] = keyMorph;
             }
         }
     }

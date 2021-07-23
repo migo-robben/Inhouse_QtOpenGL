@@ -15,7 +15,7 @@ void Animator::updateAnimation(float dt) {
         m_CurrentFrame += m_CurrentAnimation->getTicksPerSecond() * dt;
         m_CurrentFrame = fmod(m_CurrentFrame, m_CurrentAnimation->getDuration());
         calculateBoneTransform(&m_CurrentAnimation->getRootNode(), QMatrix4x4());
-        calculateBlendShapePosition(*m_CurrentAnimation->getKeyMorph());
+        calculateBlendShapePosition(m_CurrentAnimation->getKeyMorph());
     }
 }
 
@@ -33,6 +33,8 @@ void Animator::calculateBoneTransform(const AssimpNodeData *node, QMatrix4x4 par
     QMatrix4x4 globalTransformation = parentTransform * nodeTransform;
 
     auto boneInfoMap = m_CurrentAnimation->getBoneIDMap();
+    bool a = boneInfoMap.find(nodeName) != boneInfoMap.end();
+
     if (boneInfoMap.find(nodeName) != boneInfoMap.end()) {
         int index = boneInfoMap[nodeName].id;
         QMatrix4x4 offset = boneInfoMap[nodeName].offset;
@@ -42,22 +44,23 @@ void Animator::calculateBoneTransform(const AssimpNodeData *node, QMatrix4x4 par
         calculateBoneTransform(&node->children[i], globalTransformation);
 }
 
-void Animator::calculateBlendShapePosition(QVector<KeyMorph> km ) {
+void Animator::calculateBlendShapePosition(QVector<QVector<KeyMorph>> km ) {
     if(km.empty())
         return;
 
-    // TODO optimise inter
+    bsWeights.clear();
+
+    // TODO optimise interpolation
     int bsIndex0 = int(m_CurrentFrame);
-    int bsIndex1 = int(m_CurrentFrame)+1;
+    for(int i=0; i<km.length(); i++){
+        QVector<KeyMorph> keysMorph = km[i];
+        unsigned int bsWeightLength = keysMorph[bsIndex0].m_NumValuesAndWeights;  // same with bs length
 
-    double lastTime = km[bsIndex0].m_Time;
-    double nextTime = km[bsIndex1].m_Time;
-    double scaleFactor = (m_CurrentFrame-lastTime)/(nextTime-lastTime);
-    int bsWeightLength = km[bsIndex0].m_NumValuesAndWeights;
-    bsWeights.resize(bsWeightLength);
-    bsWeights.fill(0.0f);
-    for(int i=0;i<bsWeightLength;i++){
-
-        bsWeights[i] = km[bsIndex0].m_Weights[i];
+        for(int j=0; j<bsWeightLength; j++){
+            QVector2D weightData;
+            weightData.setX( i );
+            weightData.setY( keysMorph[bsIndex0].m_Weights[j] );
+            bsWeights.append( weightData );
+        }
     }
 }
