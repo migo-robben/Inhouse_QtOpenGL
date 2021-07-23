@@ -377,7 +377,7 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         meshBoneId = boneInfo[qmeshName].id;
         meshBoneWeight = 1.0f;
     }
-    qDebug() << "circling mesh info: " << qmeshName << meshBoneId << mesh->mNumBones;
+    qDebug() << "circling mesh info: (name, boneId, numBone)" << qmeshName << meshBoneId << mesh->mNumBones;
     // Walk through each of the mesh's vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
