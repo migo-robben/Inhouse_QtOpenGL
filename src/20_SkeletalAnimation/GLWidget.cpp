@@ -236,9 +236,11 @@ void GLWidget::initShaders() {
 
 void GLWidget::initGeometry() {
     customGeometry = new CustomGeometry(QString("src/20_SkeletalAnimation/resource/testBlendShapeTrans.fbx")); // dancing_vampire
-    customGeometry->initAnimation();
     customGeometry->initGeometry();
+    customGeometry->initAnimation();
     customGeometry->initAnimator();
+    customGeometry->setupTransformationAttribute();
+    customGeometry->initAllocate();
     customGeometry->setupAttributePointer(SHADER(0));
 }
 

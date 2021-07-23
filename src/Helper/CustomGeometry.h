@@ -31,16 +31,19 @@ public:
     void initGeometry() override;
     void initAnimation();
     void initAnimator();
+
     QMap<QString, BoneInfo>& getOffsetMatMap() { return m_OffsetMatMap; }
     int& getBoneCount() { return m_BoneCount; }
+
     void extractBoneWeightForVertices(QVector<VertexData> &data, aiMesh* mesh, const aiScene* scene);
     void setVertexBoneDataToDefault(VertexData &data);
     QMatrix4x4 convertAIMatrixToQtFormat(const aiMatrix4x4& from);
     void setVertexBoneData(VertexData& vertex, int boneID, float weight);
     void initGeometry(QVector<QVector<QVector3D>> &ObjectSHCoefficient);
-
+    void initAllocate();
     void setupAttributePointer(QOpenGLShaderProgram *program) override;
     void setupAttributePointer(QOpenGLShaderProgram *program, bool RPT, int bandPower2);
+    void setupTransformationAttribute();
     static int computeLevelByVCount(unsigned int, int);
     void drawGeometry(QOpenGLShaderProgram *program,
                       QMatrix4x4 model,
@@ -72,6 +75,7 @@ protected:
 private:
     QVector<VertexData> vertices;
     QVector<GLuint> indices;
+    QMap<QString, QVector<unsigned int>> verticesSlice;
 
     // ----- Animation ----- //
 

@@ -149,6 +149,7 @@ void CustomGeometry::initGeometry() {
     qDebug() << "NumAnimations: " << m_animationNum << " BoneCount: " << m_BoneCount;
     qDebug() << "Vertices Indices Count: " << verticesCount << indicesCount;
     qDebug() << "blendShapeSlice: " << blendShapeSlice;
+    qDebug() << "verticesSlice: " << verticesSlice;
 
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
 
@@ -184,7 +185,9 @@ void CustomGeometry::initGeometry(QVector<QVector<QVector3D>> &ObjectSHCoefficie
     // process ASSIMP's root node recursively
     processNode(scene->mRootNode, scene);
     setupObjectSHCoefficient(ObjectSHCoefficient);
+}
 
+void CustomGeometry::initAllocate() {
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
 
     vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
@@ -367,17 +370,9 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
     int vlevel = computeLevelByVCount(mesh->mNumVertices, 2);
     mesh->mNumBones; // it will be 0 if this mesh that doesn't have any bone influence with.
                         // so we need multi-matrix transformation
-    QMap<QString, BoneInfo> boneInfo = animation.getBoneIDMap();  // for fbx transformation animation,
-                        // if the mesh name is same with bone name so we need to set BoneId and Weights as skeletal
     QString qmeshName = QString(mesh->mName.data);
-    bool foundMeshBone = boneInfo.find(qmeshName) != boneInfo.end();
-    int meshBoneId = -1;
-    float meshBoneWeight = 0.0f;
-    if(foundMeshBone){
-        meshBoneId = boneInfo[qmeshName].id;
-        meshBoneWeight = 1.0f;
-    }
-    qDebug() << "circling mesh info: (name, boneId, numBone)" << qmeshName << meshBoneId << mesh->mNumBones;
+
+    qDebug() << "circling mesh info: (name, numBone)" << qmeshName << mesh->mNumBones;
     // Walk through each of the mesh's vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
@@ -390,25 +385,10 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         VertexData data;
 
         setVertexBoneDataToDefault(data);
-        if(foundMeshBone){
-            data.m_BoneIDs.setX(meshBoneId);
-            data.m_BoneIDs.setY(-1);
-            data.m_BoneIDs.setZ(-1);
-            data.m_BoneIDs.setW(-1);
-
-            data.m_Weights.setX(meshBoneWeight);
-            data.m_Weights.setY(0.0);
-            data.m_Weights.setZ(0.0);
-            data.m_Weights.setW(0.0);
-        }
 
         pos.setX(mesh->mVertices[i].x);
         pos.setY(mesh->mVertices[i].y);
         pos.setZ(mesh->mVertices[i].z);
-
-        if(mesh->mNumBones == 0 && ! foundMeshBone){  // if it wasn't effected by bone and transformation so we set parent transformation.
-            pos = m_geoMatrix[QString(mesh->mName.data)] * pos;
-        }
 
         if (mesh->mTextureCoords[0]) {
             tex.setX(mesh->mTextureCoords[0][i].x);
@@ -491,7 +471,9 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
     }
 
     extractBoneWeightForVertices(vertices, mesh, scene);
-
+    verticesSlice[qmeshName] = QVector<unsigned int>{static_cast<unsigned int>(m_indexIncrease),
+                                                     m_indexIncrease + mesh->mNumVertices,
+                                                     mesh->mNumBones};
     m_indexIncrease += mesh->mNumVertices;
 }
 
@@ -538,3 +520,40 @@ void CustomGeometry::computeGeometryHierarchy(const aiNode * parentNode, QMatrix
         computeGeometryHierarchy(parentNode->mChildren[i], transformation);
     }
 }
+
+void CustomGeometry::setupTransformationAttribute() {
+    QMap<QString, BoneInfo> boneInfo = animation.getBoneIDMap();  // for fbx transformation animation,
+    // if the mesh name is same with bone name so we need to set BoneId and Weights as skeletal
+    QMapIterator<QString, QVector<unsigned int>> iter(verticesSlice);
+    while (iter.hasNext()) {
+        iter.next();
+        QString meshName = iter.key();
+        QVector<unsigned int> verSlice = iter.value();
+        unsigned int verStart = verSlice[0];
+        unsigned int verEnd = verSlice[1];
+        unsigned int verBoneNum = verSlice[2];
+        bool foundMeshBone = boneInfo.find(meshName) != boneInfo.end();
+
+        int meshBoneId = -1;
+        float meshBoneWeight = 0.0f;
+        if(foundMeshBone){
+            meshBoneId = boneInfo[meshName].id;
+            meshBoneWeight = 1.0f;
+        }
+        qDebug() << "setup trans attr: " << iter.key() << ": " << iter.value() << foundMeshBone << verBoneNum;
+        for(unsigned int i=verStart;i<verEnd;i++){
+            if(verBoneNum == 0){
+                auto & vertice = vertices[i];
+
+                if(foundMeshBone){
+                    vertice.m_BoneIDs.setX(meshBoneId);
+                    vertice.m_Weights.setX(meshBoneWeight);
+                }else
+                {  // if it wasn't effected by bone and transformation so we set parent transformation.
+                    vertice.position = m_geoMatrix[meshName] * vertices[i].position;
+                }
+            }
+        }
+    }
+}
+
