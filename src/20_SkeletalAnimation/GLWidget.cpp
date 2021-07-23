@@ -56,27 +56,30 @@ void GLWidget::initializeGL() {
 
     createBlendShapeTex(true);
 
-    timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, &GLWidget::updateFrame);
-    int refreshMs = 1000.0 / customGeometry->animation.getTicksPerSecond();
-    qDebug() << "refresh: " << refreshMs;
-    timer->start(refreshMs);
-    elapsedTimer.start();
+    if(customGeometry->m_animationNum){
+        timer = new QTimer(this);
+        connect(timer, &QTimer::timeout, this, &GLWidget::updateFrame);
+        int refreshMs = 1000.0 / customGeometry->animation.getTicksPerSecond();
+        qDebug() << "refresh: " << refreshMs;
+        timer->start(refreshMs);
+        elapsedTimer.start();
+    }
 }
 
 void GLWidget::paintGL() {
     glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    SHADER(0)->bind();
+
+    SHADER(0)->setUniformValue("NumAnimation", customGeometry->m_animationNum);
     float currentTime = elapsedTimer.elapsed() / 1000.0;
     deltaTime = currentTime - lastTime;
     lastTime = currentTime;
-
     customGeometry->animator.updateAnimation(deltaTime);
     QVector<QMatrix4x4> transforms = customGeometry->animator.getPoseTransforms();
-
-    SHADER(0)->bind();
     SHADER(0)->setUniformValueArray("finalBonesMatrices", transforms.data(), transforms.size());
+    qDebug() << transforms;
     SHADER(0)->setUniformValueArray("BlendShapeWeight", customGeometry->animator.bsWeights.data(), customGeometry->animator.bsWeights.count());
     SHADER(0)->setUniformValue("NumBlendShapeWeight", customGeometry->animator.bsWeights.count());
     SHADER(0)->setUniformValue("ScaleFactorX", scaleFactorX);
@@ -95,7 +98,7 @@ void GLWidget::paintGL() {
     model.setToIdentity();
     model.translate(QVector3D(0.0, -1.0, 0.0));
     model.scale(0.1);
-//    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     customGeometry->drawGeometry(
             SHADER(0),
@@ -232,7 +235,7 @@ void GLWidget::initShaders() {
 }
 
 void GLWidget::initGeometry() {
-    customGeometry = new CustomGeometry(QString("src/20_SkeletalAnimation/resource/testBlendShapePart.fbx")); // dancing_vampire
+    customGeometry = new CustomGeometry(QString("src/20_SkeletalAnimation/resource/testBlendShapeTrans.fbx")); // dancing_vampire
     customGeometry->initGeometry();
     customGeometry->initAnimation();
     customGeometry->initAnimator();

@@ -33,9 +33,8 @@ void Animator::calculateBoneTransform(const AssimpNodeData *node, QMatrix4x4 par
     QMatrix4x4 globalTransformation = parentTransform * nodeTransform;
 
     auto boneInfoMap = m_CurrentAnimation->getBoneIDMap();
-    bool a = boneInfoMap.find(nodeName) != boneInfoMap.end();
 
-    if (boneInfoMap.find(nodeName) != boneInfoMap.end()) {
+    if (boneInfoMap.find(nodeName) != boneInfoMap.end()) {  // found
         int index = boneInfoMap[nodeName].id;
         QMatrix4x4 offset = boneInfoMap[nodeName].offset;
         m_Transforms[index] = globalTransformation * offset;
@@ -60,7 +59,7 @@ void Animator::calculateBlendShapePosition(QVector<QVector<KeyMorph>> km ) {
             QVector2D weightData;
             weightData.setX( i );
             weightData.setY( keysMorph[bsIndex0].m_Weights[j] );
-            bsWeights.append( weightData );
+            bsWeights.append( weightData ); // combine them all into one array and will deal that in vs shader
         }
     }
 }

@@ -23,6 +23,7 @@ uniform int ScaleFactorX;
 uniform int ScaleFactorY;
 uniform int ScaleFactorZ;
 uniform int NumBlendShapeWeight;
+uniform int NumAnimation;
 uniform vec2 BlendShapeWeight[MAX_BLENDSHAPE];
 uniform vec4 BlendShapeSlice[MAX_BLENDSHAPE];
 uniform vec2 BlendShapePrecision[MAX_BLENDSHAPE];
@@ -47,9 +48,8 @@ ivec2 getBlendShapeIDs(int vs_id){
         int bs_map_id = int(BlendShapeSlice[i].z);
         int bs_length = end - head;
 
-        int diff = vs_id - head;
         if(vs_id >= head && vs_id < end){
-            final_vs_id = diff;
+            final_vs_id = vs_id - head;
             final_map_id = bs_map_id;
             break;
         }
@@ -61,6 +61,7 @@ void main() {
     coord = aCoord;
 
     ivec4 BoneIds = ivec4(int(boneIds.x), int(boneIds.y), int(boneIds.z), int(boneIds.w));
+    int blendShapeNum = int(aBlendShapeData.x);
     vec3 BsMapPos = vec3(0.0);
     vec3 BsMapNor = vec3(0.0);
     float bias = 0.25;
@@ -78,7 +79,8 @@ void main() {
     ivec2 blendShapeIDs = getBlendShapeIDs(gl_VertexID);
     int bsVsID = blendShapeIDs.x;
     int bsMapID = blendShapeIDs.y;
-    if(bsVsID != -1
+    if( bsVsID != -1
+        && blendShapeNum != 0
         //&& bsMapID == 1 // for debug single blendshape
     ){
         int halfIndex = Precision*Precision/2;
@@ -89,14 +91,13 @@ void main() {
         int u1 = int((bsVsID + halfIndex) % Precision);
         int v1 = int((bsVsID + halfIndex) / Precision);
         ivec2 bsCoord1 = ivec2(u1, v1);
-        int blendShapeNum = int(aBlendShapeData.x);
 
         // Compute BlendShape pos and Normal
         for(int i=0; i < NumBlendShapeWeight; i++){
             vec2 bsWeightData = BlendShapeWeight[i];
             int bsMapID_iner = int(bsWeightData.x);
 
-            if(bsMapID_iner == bsMapID){
+            if(bsMapID_iner == bsMapID){ // found startup here and break after deal once;
                 for(int j=0;j<blendShapeNum;j++){
                     float bsWeight = BlendShapeWeight[i+j].y;
 
@@ -126,21 +127,24 @@ void main() {
         newNor = aNormal;
     }
 
-
     // compute bone influence
-    for(int i = 0 ; i < MAX_BONE_INFLUENCE ; i++)
-    {
-        if(BoneIds[i] == -1) {
-            continue;
-        }
-        if(BoneIds[i] >= MAX_BONES)
+    if(NumAnimation != 0){
+        for(int i = 0 ; i < MAX_BONE_INFLUENCE ; i++)
         {
-            totalPosition = vec4(newPos, 1.0);
-            break;
+            if(BoneIds[i] == -1) {
+                continue;
+            }
+            if(BoneIds[i] >= MAX_BONES)
+            {
+                totalPosition = vec4(newPos, 1.0);
+                break;
+            }
+            vec4 localPosition = finalBonesMatrices[BoneIds[i]] * vec4(newPos, 1.0f);
+            totalPosition += localPosition * weights[i];
+            localNormal += mat3(finalBonesMatrices[BoneIds[i]]) * newNor * weights[i];
         }
-        vec4 localPosition = finalBonesMatrices[BoneIds[i]] * vec4(newPos, 1.0f);
-        totalPosition += localPosition * weights[i];
-        localNormal += mat3(finalBonesMatrices[BoneIds[i]]) * newNor * weights[i];
+    }else{
+        totalPosition = vec4(newPos, 1.0);
     }
 
     mat3 normalMatrix = transpose(inverse(mat3(model)));

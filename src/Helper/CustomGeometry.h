@@ -57,6 +57,11 @@ public:
 
     void setupObjectSHCoefficient(QVector<QVector<QVector3D>> &ObjectSHCoefficient);
 
+public:
+    void computeScaleFactor(QVector3D&);
+    void computeGeometryHierarchy(const aiNode*, QMatrix4x4);
+    QMap<QString, QMatrix4x4> m_geoMatrix;
+
 protected:
     QVector<VertexData> getVerticesData() override;
     QVector<GLuint> getIndices() override;
@@ -65,18 +70,20 @@ protected:
     void processMesh(aiMesh *mesh, const aiScene *scene);
 
 private:
-    void computeScaleFactor(QVector3D&);
     QVector<VertexData> vertices;
     QVector<GLuint> indices;
 
     // ----- Animation ----- //
+
     QMap<QString, BoneInfo> m_OffsetMatMap;
     int m_BoneCount = 0;
     int m_indexIncrease = 0;
     QVector<BlendShapePosition> m_blendShapeData;
     QVector<QMatrix4x4> m_Transforms;
+
 public:
     Animation animation;
+    int m_animationNum = 0;
 
 public:
     unsigned int verticesCount;

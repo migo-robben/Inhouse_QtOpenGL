@@ -134,6 +134,10 @@ void CustomGeometry::initGeometry() {
     }
 
     m_indexIncrease = 0;
+    m_animationNum = scene->mNumAnimations;
+
+    // compute geometry transformation for fbx
+    computeGeometryHierarchy(scene->mRootNode, QMatrix4x4());
 
     // process ASSIMP's root node recursively
     processNode(scene->mRootNode, scene);
@@ -141,6 +145,7 @@ void CustomGeometry::initGeometry() {
     verticesCount = getVerticesData().length();
     indicesCount = getIndices().length();
 
+    qDebug() << "NumAnimations: " << m_animationNum << " BoneCount: " << m_BoneCount;
     qDebug() << "Vertices Indices Count: " << verticesCount << indicesCount;
     qDebug() << "blendShapeSlice: " << blendShapeSlice;
 
@@ -312,7 +317,8 @@ void CustomGeometry::extractBoneWeightForVertices(QVector<VertexData> &data, aiM
         {
             int vertexId = weights[weightIndex].mVertexId+m_indexIncrease;
             float weight = weights[weightIndex].mWeight;
-//            assert(vertexId <= vertices.size());
+            // FIXME is that necessary for the line of the follow, or consider we added m_indexIncrease
+            //assert(vertexId <= vertices.size());
             setVertexBoneData(data[vertexId], boneID, weight);
         }
     }
@@ -348,10 +354,19 @@ void CustomGeometry::computeScaleFactor(QVector3D& v){
 }
 
 void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
+    /*
+     * Notes:
+     *      FBX: if the mesh has no animation, no blendShape and no transformation and
+     *          the vertices data will only record the local position, need to get the transformation
+     *          from mRootNode -> mTransformation -> mChildren -> mTransformation ...
+     *          except Freeze transformation before we exported;
+     */
     float maxBs = -1.0;
     bool blendShapeUnsliced = true;
     m_blendShapeData.clear();
     int vlevel = computeLevelByVCount(mesh->mNumVertices, 2);
+    mesh->mNumBones; // it will be 0 if this mesh that doesn't have any bone influence with.
+                        // so we need multi-matrix transformation
 
     // Walk through each of the mesh's vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; i++)
@@ -369,6 +384,10 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
         pos.setX(mesh->mVertices[i].x);
         pos.setY(mesh->mVertices[i].y);
         pos.setZ(mesh->mVertices[i].z);
+
+        if(mesh->mNumBones == 0){
+            pos = m_geoMatrix[QString(mesh->mName.data)] * pos;
+        }
 
         if (mesh->mTextureCoords[0]) {
             tex.setX(mesh->mTextureCoords[0][i].x);
@@ -477,4 +496,24 @@ int CustomGeometry::computeLevelByVCount(unsigned int vcount, int split_tile) {
         }
     }
     return precision;
+}
+
+void CustomGeometry::computeGeometryHierarchy(const aiNode * parentNode, QMatrix4x4 parentTransform) {
+    unsigned int childrenCount = parentNode->mNumChildren;
+    QMatrix4x4 transformation = convertAIMatrixToQtFormat(parentNode->mTransformation);
+
+    QString name( parentNode->mName.data ) ;
+    if (m_geoMatrix.find(name) == m_geoMatrix.end() && parentNode->mNumMeshes){
+        m_geoMatrix[name] = QMatrix4x4();
+    }
+
+    transformation = parentTransform * transformation;
+
+    if(parentNode->mNumMeshes){
+        m_geoMatrix[name] = transformation * m_geoMatrix[name];
+    }
+
+    for (int i = 0; i < childrenCount; i++) {
+        computeGeometryHierarchy(parentNode->mChildren[i], transformation);
+    }
 }

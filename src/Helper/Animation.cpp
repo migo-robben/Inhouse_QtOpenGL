@@ -13,16 +13,18 @@ Animation::Animation(QString &animationPath, CustomGeometry* model) {
         return;
     }
 
-    auto animation = scene->mAnimations[0];
-    m_Duration = animation->mDuration;
-
-    m_TicksPerSecond = animation->mTicksPerSecond;
-
     readHierarchyData(m_RootNode, scene->mRootNode);
-    setupBones(animation, model);
-    setupBlendShape(animation, model);
 
-    qDebug() << "Duration:" << m_Duration << "," << "Fps:" << m_TicksPerSecond;
+    if(scene->mNumAnimations){
+        auto animation = scene->mAnimations[0];
+        m_Duration = animation->mDuration;
+
+        m_TicksPerSecond = animation->mTicksPerSecond;
+        setupBones(animation, model);
+        setupBlendShape(animation, model);
+
+        qDebug() << "Duration:" << m_Duration << "," << "Fps:" << m_TicksPerSecond;
+    }
 }
 
 void Animation::readHierarchyData(AssimpNodeData &dest, const aiNode *src) {
@@ -50,7 +52,7 @@ QMatrix4x4 Animation::convertAIMatrixToQtFormat(const aiMatrix4x4 &from) {
 
 void Animation::setupBones(const aiAnimation *animation, CustomGeometry* model) {
     int size = animation->mNumChannels;
-
+    qDebug() << "animation num channels: " << size;
     auto& boneInfoMap = model->getOffsetMatMap();
     int& boneCount = model->getBoneCount();
 
