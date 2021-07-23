@@ -79,7 +79,7 @@ void GLWidget::paintGL() {
     customGeometry->animator.updateAnimation(deltaTime);
     QVector<QMatrix4x4> transforms = customGeometry->animator.getPoseTransforms();
     SHADER(0)->setUniformValueArray("finalBonesMatrices", transforms.data(), transforms.size());
-    qDebug() << transforms;
+    //qDebug() << transforms;
     SHADER(0)->setUniformValueArray("BlendShapeWeight", customGeometry->animator.bsWeights.data(), customGeometry->animator.bsWeights.count());
     SHADER(0)->setUniformValue("NumBlendShapeWeight", customGeometry->animator.bsWeights.count());
     SHADER(0)->setUniformValue("ScaleFactorX", scaleFactorX);
@@ -236,8 +236,8 @@ void GLWidget::initShaders() {
 
 void GLWidget::initGeometry() {
     customGeometry = new CustomGeometry(QString("src/20_SkeletalAnimation/resource/testBlendShapeTrans.fbx")); // dancing_vampire
-    customGeometry->initGeometry();
     customGeometry->initAnimation();
+    customGeometry->initGeometry();
     customGeometry->initAnimator();
     customGeometry->setupAttributePointer(SHADER(0));
 }

@@ -129,6 +129,8 @@ void main() {
 
     // compute bone influence
     if(NumAnimation != 0){
+        // if current vertex that was't effected by any bone, we need restore the position of original
+        bool noteffected = true;
         for(int i = 0 ; i < MAX_BONE_INFLUENCE ; i++)
         {
             if(BoneIds[i] == -1) {
@@ -139,9 +141,13 @@ void main() {
                 totalPosition = vec4(newPos, 1.0);
                 break;
             }
+            noteffected = false;
             vec4 localPosition = finalBonesMatrices[BoneIds[i]] * vec4(newPos, 1.0f);
             totalPosition += localPosition * weights[i];
             localNormal += mat3(finalBonesMatrices[BoneIds[i]]) * newNor * weights[i];
+        }
+        if(noteffected){
+            totalPosition = vec4(newPos, 1.0);
         }
     }else{
         totalPosition = vec4(newPos, 1.0);

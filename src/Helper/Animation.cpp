@@ -65,7 +65,6 @@ void Animation::setupBones(const aiAnimation *animation, CustomGeometry* model) 
             boneInfoMap[boneName].id = boneCount;
             boneCount++;
         }
-
         m_Bones.push_back(Bone(boneName, boneInfoMap[channel->mNodeName.data].id, channel));
     }
 
