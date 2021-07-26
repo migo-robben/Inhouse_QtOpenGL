@@ -150,16 +150,6 @@ void CustomGeometry::initGeometry() {
     qDebug() << "Vertices Indices Count: " << verticesCount << indicesCount;
     qDebug() << "blendShapeSlice: " << blendShapeSlice;
     qDebug() << "verticesSlice: " << verticesSlice;
-
-    QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
-
-    vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vbo.bind();
-    vbo.allocate(getVerticesData().constData(), getVerticesData().count() * sizeof(VertexData));
-
-    ebo.setUsagePattern(QOpenGLBuffer::StaticDraw);
-    ebo.bind();
-    ebo.allocate(getIndices().constData(), getIndices().count() * sizeof(GLuint));
 }
 
 void CustomGeometry::initAnimation() {
@@ -185,6 +175,16 @@ void CustomGeometry::initGeometry(QVector<QVector<QVector3D>> &ObjectSHCoefficie
     // process ASSIMP's root node recursively
     processNode(scene->mRootNode, scene);
     setupObjectSHCoefficient(ObjectSHCoefficient);
+
+    QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
+
+    vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
+    vbo.bind();
+    vbo.allocate(getVerticesData().constData(), getVerticesData().count() * sizeof(VertexData));
+
+    ebo.setUsagePattern(QOpenGLBuffer::StaticDraw);
+    ebo.bind();
+    ebo.allocate(getIndices().constData(), getIndices().count() * sizeof(GLuint));
 }
 
 void CustomGeometry::initAllocate() {
