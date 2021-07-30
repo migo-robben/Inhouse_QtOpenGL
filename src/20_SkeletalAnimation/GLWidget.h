@@ -47,6 +47,7 @@ protected:
     unsigned int scaleFactorY;
     unsigned int scaleFactorZ;
     void createBlendShapeTex(bool);
+    void createUDIMTex();
 
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
@@ -57,7 +58,7 @@ private:
     QList<QOpenGLShaderProgram*> programs;
     CustomGeometry *customGeometry;
     QOpenGLTexture *diffuseTexture;
-    //QOpenGLTexture *blendShapeTex;
+    QOpenGLTexture *diffuseUDIMTex;
     QVector<QOpenGLTexture*> blendShapeTexs;
 
     Camera *camera;

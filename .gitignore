@@ -88,3 +88,7 @@ bin
 /buddhaDU.dat
 /stpeters_probe.dat
 /src/20_SkeletalAnimation/resource/blendShapeTex*.png
+
+# maya project
+.mayaSwatches
+*.tx

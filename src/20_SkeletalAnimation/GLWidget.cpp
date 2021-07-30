@@ -107,6 +107,10 @@ void GLWidget::paintGL() {
             camera->getCameraProjection());
 }
 
+void GLWidget::createUDIMTex(){
+    //diffuseUDIMTex
+}
+
 void GLWidget::createBlendShapeTex(bool write2disk) {
     int bsDataLength = customGeometry->m_BSDATA.length();
     qDebug() << "********** BlendShape Tex **********";
@@ -235,7 +239,7 @@ void GLWidget::initShaders() {
 }
 
 void GLWidget::initGeometry() {
-    customGeometry = new CustomGeometry(QString("src/20_SkeletalAnimation/resource/testBlendShapeTrans.fbx")); // dancing_vampire
+    customGeometry = new CustomGeometry(QString("src/20_SkeletalAnimation/resource/testUDIM.fbx")); // dancing_vampire
     customGeometry->initGeometry();
     customGeometry->initAnimation();
     customGeometry->initAnimator();
@@ -245,7 +249,7 @@ void GLWidget::initGeometry() {
 }
 
 void GLWidget::initTexture() {
-    diffuseTexture = new QOpenGLTexture(QImage(QString("src/20_SkeletalAnimation/resource/vampire/textures/Pure.png")));
+    diffuseTexture = new QOpenGLTexture(QImage(QString("src/20_SkeletalAnimation/resource/images/Pure_1001.png")));
     //blendShapeTex = new QOpenGLTexture(QOpenGLTexture::Target::Target2DArray);
 }
 
