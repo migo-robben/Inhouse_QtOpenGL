@@ -55,6 +55,7 @@ void GLWidget::initializeGL() {
     initGeometry();
 
     createBlendShapeTex(true);
+    createUDIMTex();
 
     if(customGeometry->m_animationNum){
         timer = new QTimer(this);
@@ -87,8 +88,12 @@ void GLWidget::paintGL() {
     SHADER(0)->setUniformValue("ScaleFactorZ", scaleFactorZ);
     SHADER(0)->setUniformValueArray("BlendShapeSlice", customGeometry->blendShapeSlice.data(), customGeometry->blendShapeSlice.count());
 
-    //blendShapeTex->bind(0);
-    //SHADER(0)->setUniformValue("blendShapeMap", 0);
+    SHADER(0)->setUniformValueArray("UdimQuadrant", udimQuadrant.data(), udimQuadrant.count());
+    SHADER(0)->setUniformValue("NumUdimQuadrant", udimQuadrant.count());
+
+    diffuseUDIMTex->bind(0);
+    SHADER(0)->setUniformValue("diffuseUDIM", 0);
+
     for (int i=0; i<blendShapeTexs.count(); i++) {
         QString bsMap = QString("blendShapeMap[") + QString::number(i) + QString("]");
         blendShapeTexs[i]->bind(i);
@@ -108,7 +113,31 @@ void GLWidget::paintGL() {
 }
 
 void GLWidget::createUDIMTex(){
-    //diffuseUDIMTex
+    QVector<QImage> diffuseUIDMTexs;
+    diffuseUIDMTexs.push_back(QImage(QString("src/20_SkeletalAnimation/resource/images/Pure32bit_1001.png")).convertToFormat(QImage::Format_RGBA8888));
+    diffuseUIDMTexs.push_back(QImage(QString("src/20_SkeletalAnimation/resource/images/Pure32bit_1002.png")).convertToFormat(QImage::Format_RGBA8888));
+    diffuseUIDMTexs.push_back(QImage(QString("src/20_SkeletalAnimation/resource/images/Pure32bit_1003.png")).convertToFormat(QImage::Format_RGBA8888));
+    diffuseUIDMTexs.push_back(QImage(QString("src/20_SkeletalAnimation/resource/images/Pure32bit_1011.png")).convertToFormat(QImage::Format_RGBA8888));
+    diffuseUIDMTexs.push_back(QImage(QString("src/20_SkeletalAnimation/resource/images/Pure32bit_1012.png")).convertToFormat(QImage::Format_RGBA8888));
+    diffuseUIDMTexs.push_back(QImage(QString("src/20_SkeletalAnimation/resource/images/Pure32bit_1023.png")).convertToFormat(QImage::Format_RGBA8888));
+
+    udimQuadrant.push_back(1001);
+    udimQuadrant.push_back(1002);
+    udimQuadrant.push_back(1003);
+    udimQuadrant.push_back(1011);
+    udimQuadrant.push_back(1012);
+    udimQuadrant.push_back(1023);
+
+    diffuseUDIMTex = new QOpenGLTexture(QOpenGLTexture::Target::Target2DArray);
+    diffuseUDIMTex->create();
+    diffuseUDIMTex->setFormat(QOpenGLTexture::SRGB8);
+    diffuseUDIMTex->setSize(512, 512, 3);
+    diffuseUDIMTex->setLayers(6);
+    diffuseUDIMTex->allocateStorage();
+
+    for(int i=0;i<6;i++){
+        diffuseUDIMTex->setData(0, i,QOpenGLTexture::RGBA, QOpenGLTexture::UInt8, diffuseUIDMTexs[i].constBits());
+    }
 }
 
 void GLWidget::createBlendShapeTex(bool write2disk) {
@@ -249,7 +278,7 @@ void GLWidget::initGeometry() {
 }
 
 void GLWidget::initTexture() {
-    diffuseTexture = new QOpenGLTexture(QImage(QString("src/20_SkeletalAnimation/resource/images/Pure_1001.png")));
+    diffuseTexture = new QOpenGLTexture(QImage(QString("src/20_SkeletalAnimation/resource/images/Pure24bit_1001.png")));
     //blendShapeTex = new QOpenGLTexture(QOpenGLTexture::Target::Target2DArray);
 }
 

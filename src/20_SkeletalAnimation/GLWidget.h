@@ -59,6 +59,7 @@ private:
     CustomGeometry *customGeometry;
     QOpenGLTexture *diffuseTexture;
     QOpenGLTexture *diffuseUDIMTex;
+    QVector<int> udimQuadrant;
     QVector<QOpenGLTexture*> blendShapeTexs;
 
     Camera *camera;

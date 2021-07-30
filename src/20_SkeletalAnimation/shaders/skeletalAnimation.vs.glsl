@@ -111,10 +111,6 @@ void main() {
         }
     }
 
-    // Debug
-    //bsdebugcolor = texture(blendShapeMap, vec3(bsCoordf, 0));
-    DebugColor = vec3(aNormal);
-
     vec4 totalPosition = vec4(0.0f);
     vec3 localNormal = vec3(0.0f);
     vec3 newPos;
