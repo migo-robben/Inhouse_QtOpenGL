@@ -11,9 +11,11 @@
 #include <QKeyEvent>
 #include <QString>
 #include <QDebug>
+#include <iostream>
 
 #include <QApplication>
 
+#include "spdlog/spdlog.h"
 
 #pragma push_macro("slots")
 #undef slots
@@ -25,8 +27,6 @@
 #include "pxr/usd/usdGeom/mesh.h"
 
 #pragma pop_macro("slots")
-
-#include <boost/log/trivial.hpp>
 
 
 struct VertexData
@@ -102,10 +102,11 @@ void GLWidget::initializeGL() {
     // --------------------------------------- //
     initGLSetting();
 
-//    initShaders();
-//    initTexture();
+    initShaders();
+    initTexture();
 
     testReadUSDFile();
+
 //    initGeometry();
 //    setupAttributePointer();
 
@@ -143,6 +144,7 @@ void GLWidget::resizeGL(int width, int height) {
 }
 
 void GLWidget::cleanup() {
+    spdlog::info("GLWidget cleanup");
     if (program == nullptr)
         return;
 
@@ -224,8 +226,9 @@ void GLWidget::testReadUSDFile() {
     pxr::UsdStageRefPtr stage = pxr::UsdStage::Open(path.toStdString());
     for (pxr::UsdPrim prim: stage->TraverseAll()) {
 //        if (!prim.IsA<pxr::UsdGeomMesh>()) { continue; }
-        BOOST_LOG_TRIVIAL(debug) << "prim --- " << prim.GetPath();
+        spdlog::debug("prim --- {}", prim.GetPath().GetNameToken().data());
     }
+    spdlog::debug("stage traversed.");
 }
 
 QVector<VertexData> GLWidget::getVerticesData() {
@@ -239,6 +242,9 @@ QVector<GLuint> GLWidget::getIndices() {
 
 
 int main(int argc, char *argv[]) {
+    spdlog::set_level(spdlog::level::debug); // Set global log level to debug
+    spdlog::info("Welcome to spdlog!");
+
     QApplication app(argc, argv);
 
     QSurfaceFormat format;
@@ -252,7 +258,6 @@ int main(int argc, char *argv[]) {
 
     GLWidget w;
     w.show();
-
 
     return QApplication::exec();
 }

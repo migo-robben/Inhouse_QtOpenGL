@@ -11,6 +11,15 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
 
 # USD
+add_compile_options(/w44244)
+add_compile_options(/w44305)
+add_compile_options(/w44267)
+add_compile_options(/w44506)
+add_compile_options(/w44091)
+add_compile_options(/w44273)
+add_compile_options(/w44180)
+add_compile_options(/w44334)
+
 set(USD_ROOT ${USD_HOME})
 set(USD_INSTALL_DIR ${USD_HOME})
 set(USD_INCLUDE_DIR ${USD_ROOT}/include)
@@ -37,6 +46,7 @@ set(Python3_LIBRARY_DIR ${Python3_ROOT_DIR}/libs)
 
 # USD - Boost
 add_definitions(-D BOOST_ALL_DYN_LINK)
+
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
@@ -44,10 +54,18 @@ set(Boost_LIB_PREFIX "")
 set(BOOST_ROOT ${USD_HOME})
 set(Boost_INCLUDE_DIRS ${USD_HOME}/include/boost-1_70)
 set(Boost_LIBRARY_DIRS ${USD_HOME}/lib)
-set(Boost_LIBRARIES ${Boost_LIBRARY_DIRS}/boost_python37-vc142-mt-gd-x64-1_70.lib;${Boost_LIBRARY_DIRS}/boost_log-vc142-mt-gd-x64-1_70.lib;${Boost_LIBRARY_DIRS}/boost_date_time-vc142-mt-gd-x64-1_70.lib;${Boost_LIBRARY_DIRS}/boost_filesystem-vc142-mt-gd-x64-1_70.lib;${Boost_LIBRARY_DIRS}/boost_thread-vc142-mt-gd-x64-1_70.lib;${Boost_LIBRARY_DIRS}/boost_regex-vc142-mt-gd-x64-1_70.lib;${Boost_LIBRARY_DIRS}/boost_chrono-vc142-mt-gd-x64-1_70.lib;${Boost_LIBRARY_DIRS}/boost_atomic-vc142-mt-gd-x64-1_70.lib)
+set(Boost_LIBRARIES
+        ${Boost_LIBRARY_DIRS}/boost_python37-vc142-mt-gd-x64-1_70.lib;
+        ${Boost_LIBRARY_DIRS}/boost_date_time-vc142-mt-gd-x64-1_70.lib;
+        ${Boost_LIBRARY_DIRS}/boost_filesystem-vc142-mt-gd-x64-1_70.lib;
+        ${Boost_LIBRARY_DIRS}/boost_thread-vc142-mt-gd-x64-1_70.lib;
+        ${Boost_LIBRARY_DIRS}/boost_regex-vc142-mt-gd-x64-1_70.lib;
+        ${Boost_LIBRARY_DIRS}/boost_chrono-vc142-mt-gd-x64-1_70.lib;
+        ${Boost_LIBRARY_DIRS}/boost_atomic-vc142-mt-gd-x64-1_70.lib)
 
 
 # Find Package
+find_package(spdlog CONFIG REQUIRED)
 find_package(Assimp CONFIG)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)

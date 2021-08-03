@@ -28,6 +28,7 @@ target_link_libraries(${TARGET_NAME}
         ${Boost_LIBRARIES}
         ${TBB_LIBRARIES})
 
+target_link_libraries(${TARGET_NAME} spdlog::spdlog spdlog::spdlog_header_only)
 
 set(INSTALL_DIR "${CMAKE_SOURCE_DIR}/bin")
 install(TARGETS ${TARGET_NAME} DESTINATION ${INSTALL_DIR})
