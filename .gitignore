@@ -16,7 +16,7 @@ cmake-build-*
 # Compiled Dynamic libraries
 *.so
 *.dylib
-*.dll
+#*.dll
 
 # Fortran module files
 *.mod
@@ -25,10 +25,10 @@ cmake-build-*
 *.lai
 *.la
 *.a
-*.lib
+#*.lib
 
 # Executables
-*.exe
+#*.exe
 *.out
 *.app
 
@@ -82,7 +82,7 @@ crashlytics-build.properties
 fabric.properties
 
 # bin
-bin
+/bin/
 /buddhaDI.dat
 /buddhaDS.dat
 /buddhaDU.dat
