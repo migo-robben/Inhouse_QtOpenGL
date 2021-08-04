@@ -15,18 +15,25 @@
 
 #include <QApplication>
 
-#include "spdlog/spdlog.h"
 
 #pragma push_macro("slots")
 #undef slots
 
 #include "pxr/pxr.h"
 #include "pxr/usd/usd/stage.h"
+#include "pxr/usd/sdf/path.h"
 #include "pxr/usd/usd/prim.h"
+#include "pxr/imaging/hd/meshTopology.h"
 #include "pxr/usd/usd/primRange.h"
 #include "pxr/usd/usdGeom/mesh.h"
+#include "pxr/usd/usdGeom/tokens.h"
+#include "pxr/imaging/hd/meshUtil.h"
+#include "pxr/base/vt/types.h"
 
 #pragma pop_macro("slots")
+
+#include "spdlog/spdlog.h"
+#include "boost/log/trivial.hpp"
 
 
 struct VertexData
@@ -59,6 +66,9 @@ protected:
     QVector<GLuint> getIndices();
 
     void testReadUSDFile();
+    void testTriangulation();
+    void testPointAnimation();
+
 private:
     QOpenGLShaderProgram *program;
     QOpenGLVertexArrayObject vao;
@@ -102,10 +112,12 @@ void GLWidget::initializeGL() {
     // --------------------------------------- //
     initGLSetting();
 
-    initShaders();
-    initTexture();
+//    initShaders();
+//    initTexture();
 
-    testReadUSDFile();
+//    testReadUSDFile();
+//    testTriangulation();
+    testPointAnimation();
 
 //    initGeometry();
 //    setupAttributePointer();
@@ -229,6 +241,56 @@ void GLWidget::testReadUSDFile() {
         spdlog::debug("prim --- {}", prim.GetPath().GetNameToken().data());
     }
     spdlog::debug("stage traversed.");
+}
+
+void GLWidget::testTriangulation() {
+
+    QString path = "src/22_UDIM/resource/test_triangulation/main.usd";
+    pxr::UsdStageRefPtr stage = pxr::UsdStage::Open(path.toStdString());
+
+    pxr::UsdTimeCode time(0);
+
+    pxr::UsdPrim prim = stage->GetPrimAtPath(pxr::SdfPath("/pPlane1"));
+
+    pxr::UsdAttribute attr_faceVertexCounts = prim.GetAttribute(pxr::TfToken("faceVertexCounts"));
+    pxr::VtArray<int> faceVertexCounts;    // int[] faceVertexCounts = [4]
+    attr_faceVertexCounts.Get(&faceVertexCounts, time);
+    BOOST_LOG_TRIVIAL(debug) << ">>> faceVertexCounts \n" << faceVertexCounts;
+
+    pxr::UsdAttribute attr_faceVertexIndices = prim.GetAttribute(pxr::TfToken("faceVertexIndices"));
+    pxr::VtArray<int> faceVertexIndices;    // int[] faceVertexIndices = [0, 1, 3, 2]
+    attr_faceVertexIndices.Get(&faceVertexIndices, time);
+    BOOST_LOG_TRIVIAL(debug) << ">>> faceVertexIndices \n" << faceVertexIndices;
+
+    pxr::VtIntArray holeIndices(0);
+
+
+//    ---------- Triangulation ----------
+    pxr::HdMeshTopology topology(
+        pxr::UsdGeomTokens->none, pxr::UsdGeomTokens->rightHanded,
+        faceVertexCounts, faceVertexIndices, holeIndices);
+
+    pxr::VtVec3iArray trianglesFaceVertexIndices;
+    pxr::VtIntArray primitiveParam;
+    pxr::VtVec3iArray trianglesEdgeIndices;
+
+    pxr::HdMeshUtil mesh_util(&topology, prim.GetPath());
+    mesh_util.ComputeTriangleIndices(&trianglesFaceVertexIndices, &primitiveParam, &trianglesEdgeIndices);
+
+    BOOST_LOG_TRIVIAL(debug) << ">>> trianglesFaceVertexIndices \n" << trianglesFaceVertexIndices;    // [(0, 1, 3), (0, 3, 2)]
+    BOOST_LOG_TRIVIAL(debug) << ">>> primitiveParam \n" << primitiveParam;    // [1, 2]
+    BOOST_LOG_TRIVIAL(debug) << ">>> trianglesEdgeIndices \n" << trianglesEdgeIndices;    // [(0, 1, -1), (-1, 2, 3)]
+}
+
+
+void GLWidget::testPointAnimation() {
+    QString path = "src/22_UDIM/resource/test_point_anim/main.usd";
+    pxr::UsdStageRefPtr stage = pxr::UsdStage::Open(path.toStdString());
+
+    std::string result;
+    stage->ExportToString(&result);
+    BOOST_LOG_TRIVIAL(debug) << result;
+
 }
 
 QVector<VertexData> GLWidget::getVerticesData() {
