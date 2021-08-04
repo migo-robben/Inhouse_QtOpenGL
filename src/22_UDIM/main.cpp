@@ -18,6 +18,8 @@
 
 #pragma push_macro("slots")
 #undef slots
+#include "Python.h"
+#pragma pop_macro("slots")
 
 #include "pxr/pxr.h"
 #include "pxr/usd/usd/stage.h"
@@ -30,10 +32,9 @@
 #include "pxr/imaging/hd/meshUtil.h"
 #include "pxr/base/vt/types.h"
 
-#pragma pop_macro("slots")
 
 #include "spdlog/spdlog.h"
-#include "boost/log/trivial.hpp"
+#include "spdlog/fmt/ostr.h"
 
 
 struct VertexData
@@ -112,11 +113,11 @@ void GLWidget::initializeGL() {
     // --------------------------------------- //
     initGLSetting();
 
-//    initShaders();
-//    initTexture();
+    initShaders();
+    initTexture();
 
-//    testReadUSDFile();
-//    testTriangulation();
+    testReadUSDFile();
+    testTriangulation();
     testPointAnimation();
 
 //    initGeometry();
@@ -238,7 +239,7 @@ void GLWidget::testReadUSDFile() {
     pxr::UsdStageRefPtr stage = pxr::UsdStage::Open(path.toStdString());
     for (pxr::UsdPrim prim: stage->TraverseAll()) {
 //        if (!prim.IsA<pxr::UsdGeomMesh>()) { continue; }
-        spdlog::debug("prim --- {}", prim.GetPath().GetNameToken().data());
+        spdlog::debug("prim --- {}", prim.GetPath());
     }
     spdlog::debug("stage traversed.");
 }
@@ -255,12 +256,12 @@ void GLWidget::testTriangulation() {
     pxr::UsdAttribute attr_faceVertexCounts = prim.GetAttribute(pxr::TfToken("faceVertexCounts"));
     pxr::VtArray<int> faceVertexCounts;    // int[] faceVertexCounts = [4]
     attr_faceVertexCounts.Get(&faceVertexCounts, time);
-    BOOST_LOG_TRIVIAL(debug) << ">>> faceVertexCounts \n" << faceVertexCounts;
+    spdlog::info(">>> faceVertexCounts \n{}", faceVertexCounts);
 
     pxr::UsdAttribute attr_faceVertexIndices = prim.GetAttribute(pxr::TfToken("faceVertexIndices"));
     pxr::VtArray<int> faceVertexIndices;    // int[] faceVertexIndices = [0, 1, 3, 2]
     attr_faceVertexIndices.Get(&faceVertexIndices, time);
-    BOOST_LOG_TRIVIAL(debug) << ">>> faceVertexIndices \n" << faceVertexIndices;
+    spdlog::info(">>> faceVertexIndices \n{}", faceVertexIndices);
 
     pxr::VtIntArray holeIndices(0);
 
@@ -275,11 +276,11 @@ void GLWidget::testTriangulation() {
     pxr::VtVec3iArray trianglesEdgeIndices;
 
     pxr::HdMeshUtil mesh_util(&topology, prim.GetPath());
-    mesh_util.ComputeTriangleIndices(&trianglesFaceVertexIndices, &primitiveParam, &trianglesEdgeIndices);
+//    mesh_util.ComputeTriangleIndices(&trianglesFaceVertexIndices, &primitiveParam, &trianglesEdgeIndices);
 
-    BOOST_LOG_TRIVIAL(debug) << ">>> trianglesFaceVertexIndices \n" << trianglesFaceVertexIndices;    // [(0, 1, 3), (0, 3, 2)]
-    BOOST_LOG_TRIVIAL(debug) << ">>> primitiveParam \n" << primitiveParam;    // [1, 2]
-    BOOST_LOG_TRIVIAL(debug) << ">>> trianglesEdgeIndices \n" << trianglesEdgeIndices;    // [(0, 1, -1), (-1, 2, 3)]
+    spdlog::info(">>> trianglesFaceVertexIndices \n", trianglesFaceVertexIndices);    // [(0, 1, 3), (0, 3, 2)]
+    spdlog::info(">>> primitiveParam \n", primitiveParam);    // [1, 2]
+    spdlog::info(">>> trianglesEdgeIndices \n{}", trianglesEdgeIndices);    // [(0, 1, -1), (-1, 2, 3)]
 }
 
 
@@ -289,7 +290,7 @@ void GLWidget::testPointAnimation() {
 
     std::string result;
     stage->ExportToString(&result);
-    BOOST_LOG_TRIVIAL(debug) << result;
+    spdlog::info(result);
 
 }
 

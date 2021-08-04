@@ -55,7 +55,7 @@ set(BOOST_ROOT ${USD_HOME})
 set(Boost_INCLUDE_DIRS ${USD_HOME}/include/boost-1_70)
 set(Boost_LIBRARY_DIRS ${USD_HOME}/lib)
 set(Boost_LIBRARIES
-        ${Boost_LIBRARY_DIRS}/boost_log-vc142-mt-gd-x64-1_70.lib;
+#        ${Boost_LIBRARY_DIRS}/boost_log-vc142-mt-gd-x64-1_70.lib;
         ${Boost_LIBRARY_DIRS}/boost_python37-vc142-mt-gd-x64-1_70.lib;
         ${Boost_LIBRARY_DIRS}/boost_date_time-vc142-mt-gd-x64-1_70.lib;
         ${Boost_LIBRARY_DIRS}/boost_filesystem-vc142-mt-gd-x64-1_70.lib;

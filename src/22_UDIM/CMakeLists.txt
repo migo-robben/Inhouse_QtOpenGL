@@ -4,7 +4,9 @@ set(TARGET_NAME InHouse_UDIM)
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../")
 
 
-add_executable(${TARGET_NAME} main.cpp)
+add_executable(${TARGET_NAME}
+        main.cpp
+)
 
 
 #Link python directory, because get error "fatal error LNK1104: cannot open file 'python37.lib'"
