@@ -90,6 +90,7 @@ public:
     int m_animationNum = 0;
 
 public:
+    QVector<QString> bsMeshOrderNames;
     unsigned int verticesCount;
     unsigned int indicesCount;
 

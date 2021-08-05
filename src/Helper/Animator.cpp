@@ -46,7 +46,10 @@ void Animator::calculateBoneTransform(const AssimpNodeData *node, QMatrix4x4 par
 void Animator::calculateBlendShapePosition(QVector<QVector<KeyMorph>> km ) {
     if(km.empty())
         return;
-
+    if(bsWeights.count() > maxBlendShape){
+        qDebug() << "Over maximum limit of blendShape";
+        return;
+    }
     bsWeights.clear();
 
     // TODO optimise interpolation

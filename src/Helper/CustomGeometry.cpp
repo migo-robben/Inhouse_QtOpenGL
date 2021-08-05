@@ -148,8 +148,8 @@ void CustomGeometry::initGeometry() {
     qDebug() << "Bones Name: " << animation.getBoneIDMap().keys();
     qDebug() << "NumAnimations: " << m_animationNum << " BoneCount: " << m_BoneCount;
     qDebug() << "Vertices Indices Count: " << verticesCount << indicesCount;
-    qDebug() << "blendShapeSlice: " << blendShapeSlice;
-    qDebug() << "verticesSlice: " << verticesSlice;
+//    qDebug() << "blendShapeSlice: " << blendShapeSlice;
+//    qDebug() << "verticesSlice: " << verticesSlice;
 }
 
 void CustomGeometry::initAnimation() {
@@ -339,7 +339,11 @@ void CustomGeometry::processNode(aiNode *node, const aiScene *scene) {
 
     for(unsigned int i = 0; i < node->mNumChildren; i++)
     {
+        if(node->mChildren[i]->mMetaData != nullptr && node->mChildren[i]->mMetaData->mNumProperties){
+            // TODO
+        }
         processNode(node->mChildren[i], scene);
+
     }
 }
 
@@ -372,7 +376,7 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
                         // so we need multi-matrix transformation
     QString qmeshName = QString(mesh->mName.data);
 
-    qDebug() << "circling mesh info: (name, numBone)" << qmeshName << mesh->mNumBones;
+    qDebug() << "circling mesh info: (name, numBone, bsID)" << qmeshName << mesh->mNumBones << m_BSID;
     // Walk through each of the mesh's vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
@@ -404,14 +408,16 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
             normal.setY(mesh->mNormals[i].y);
             normal.setZ(mesh->mNormals[i].z);
         }
-
-        tangent.setX(mesh->mTangents[i].x);
-        tangent.setY(mesh->mTangents[i].y);
-        tangent.setZ(mesh->mTangents[i].z);
-
-        bitangent.setX(mesh->mBitangents[i].x);
-        bitangent.setY(mesh->mBitangents[i].y);
-        bitangent.setZ(mesh->mBitangents[i].z);
+        if(mesh->mTangents){
+            tangent.setX(mesh->mTangents[i].x);
+            tangent.setY(mesh->mTangents[i].y);
+            tangent.setZ(mesh->mTangents[i].z);
+        }
+        if(mesh->mBitangents){
+            bitangent.setX(mesh->mBitangents[i].x);
+            bitangent.setY(mesh->mBitangents[i].y);
+            bitangent.setZ(mesh->mBitangents[i].z);
+        }
 
         bsdata.setX(mesh->mNumAnimMeshes);
         bsdata.setY(mesh->mNumVertices);
@@ -448,6 +454,7 @@ void CustomGeometry::processMesh(aiMesh *mesh, const aiScene *scene) {
             m_blendShapeData.push_back(bsp);
             if(blendShapeUnsliced){
                 blendShapeSlice.append(QVector4D(m_indexIncrease, m_indexIncrease+bsLen, m_BSID, 0));
+                bsMeshOrderNames.push_back(qmeshName);
                 blendShapeUnsliced = false;
             }
         }

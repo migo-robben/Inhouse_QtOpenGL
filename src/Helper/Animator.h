@@ -21,7 +21,7 @@ public:
 
 public:
     QVector<QVector2D> bsWeights;
-
+    int maxBlendShape = 200;
 private:
     QVector<QMatrix4x4> m_Transforms;
     CustomGeometry* m_Geometry;

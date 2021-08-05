@@ -74,11 +74,16 @@ void Animation::setupBones(const aiAnimation *animation, CustomGeometry* model) 
 void Animation::setupBlendShape(const aiAnimation *animation, CustomGeometry *model) {
     qDebug() << "NumMorphMeshChannels: " << animation->mNumMorphMeshChannels;
     m_keyMorph.resize(animation->mNumMorphMeshChannels);
-
+    qDebug() << "BlendShape Mesh Names: " << model->bsMeshOrderNames;
     if(animation->mNumMorphMeshChannels){
 
         for(int j=0;j<animation->mNumMorphMeshChannels;j++){
         auto& channel = animation->mMorphMeshChannels[j];
+            QString channelQName(channel->mName.data);
+            std::string channelStrName = channelQName.toStdString();
+            channelStrName = channelStrName.substr(0, channelStrName.find_last_of("*"));
+            QString fixedChannelQName(channelStrName.data());
+            qDebug() << "handling channel name: " << channel->mName.data << channel->mNumKeys << fixedChannelQName;
             if(channel->mNumKeys) {
                 QVector<KeyMorph> keyMorph;
                 for (int i = 0; i < channel->mNumKeys; ++i) {
@@ -92,7 +97,8 @@ void Animation::setupBlendShape(const aiAnimation *animation, CustomGeometry *mo
                     std::copy(key.mValues, key.mValues + key.mNumValuesAndWeights, morph.m_Values);
                     keyMorph.push_back(morph);
                 }
-                m_keyMorph[j] = keyMorph;
+                int bsIndex = model->bsMeshOrderNames.indexOf(fixedChannelQName);
+                m_keyMorph[bsIndex] = keyMorph;
             }
         }
     }
