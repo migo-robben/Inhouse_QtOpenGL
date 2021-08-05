@@ -32,5 +32,6 @@ void main() {
             udimLayour = i;
         }
     }
-    FragColor = texture(diffuseUDIM, vec3(coord, udimLayour));
+    //FragColor = texture(diffuseUDIM, vec3(coord, udimLayour));
+    FragColor = vec4(Normal, 1);
 }

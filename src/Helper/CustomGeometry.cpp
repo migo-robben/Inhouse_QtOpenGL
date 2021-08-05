@@ -507,6 +507,7 @@ void CustomGeometry::computeGeometryHierarchy(const aiNode * parentNode, QMatrix
 
     QString name( parentNode->mName.data ) ;
     if (m_geoMatrix.find(name) == m_geoMatrix.end() && parentNode->mNumMeshes){
+        // TODO same name handle
         m_geoMatrix[name] = QMatrix4x4();
     }
 
@@ -523,6 +524,7 @@ void CustomGeometry::computeGeometryHierarchy(const aiNode * parentNode, QMatrix
 
 void CustomGeometry::setupTransformationAttribute() {
     QMap<QString, BoneInfo> boneInfo = animation.getBoneIDMap();  // for fbx transformation animation,
+    // TODO consider parent trans
     // if the mesh name is same with bone name so we need to set BoneId and Weights as skeletal
     QMapIterator<QString, QVector<unsigned int>> iter(verticesSlice);
     while (iter.hasNext()) {
