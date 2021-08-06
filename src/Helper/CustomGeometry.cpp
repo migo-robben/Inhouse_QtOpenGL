@@ -145,7 +145,6 @@ void CustomGeometry::initGeometry() {
     verticesCount = getVerticesData().length();
     indicesCount = getIndices().length();
 
-    qDebug() << "Bones Name: " << animation.getBoneIDMap().keys();
     qDebug() << "NumAnimations: " << m_animationNum << " BoneCount: " << m_BoneCount;
     qDebug() << "Vertices Indices Count: " << verticesCount << indicesCount;
 //    qDebug() << "blendShapeSlice: " << blendShapeSlice;

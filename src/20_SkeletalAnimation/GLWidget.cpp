@@ -216,7 +216,7 @@ void GLWidget::createBlendShapeTex(bool write2disk) {
             // Write to disk
             if(write2disk){
                 QImage image(bsDataUc.data(), precision, precision, QImage::Format_RGBA8888);
-                image.save(QString("src/20_SkeletalAnimation/resource/blendShapeTex")
+                image.save(QString("src/20_SkeletalAnimation/resource/tmp/blendShapeTex")
                     +QString::number(z)
                     +QString("_")
                     +QString::number(i)

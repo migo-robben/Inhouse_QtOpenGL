@@ -92,3 +92,4 @@ fabric.properties
 # maya project
 .mayaSwatches
 *.tx
+/src/20_SkeletalAnimation/resource/tmp/

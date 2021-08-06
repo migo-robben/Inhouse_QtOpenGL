@@ -9,6 +9,13 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    message(STATUS "CMAKE Debug")
+    set(ASSIMP_LIB_FLAG mtd)
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+    message(STATUS "CMAKE Release")
+    set(ASSIMP_LIB_FLAG mt)
+endif()
 
 # USD
 add_compile_options(/w44244)
@@ -67,7 +74,6 @@ set(Boost_LIBRARIES
 
 # Find Package
 find_package(spdlog CONFIG REQUIRED)
-find_package(Assimp CONFIG)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
 find_package(Qt5Widgets REQUIRED)
@@ -76,12 +82,22 @@ find_package(USD REQUIRED)
 #find_package(TBB REQUIRED)
 #find_package(Boost COMPONENTS python37 log REQUIRED)
 
+# configuration assimp
+if(DEFINED ASSIMP_ROOT)
+    set(ASSIMP_LIBRARIES ${ASSIMP_ROOT}/lib/assimp-vc142-${ASSIMP_LIB_FLAG}.lib)
+    set(ASSIMP_INCLUDE_DIR "${ASSIMP_ROOT}/include")
+    message(STATUS "Config ASSIMP_LIBRARIES: ${ASSIMP_LIBRARIES} ASSIMP_INCLUDE: ${ASSIMP_INCLUDE_DIR}")
+else()
+    find_package(Assimp CONFIG)
+    set(ASSIMP_INCLUDE_DIR "/include")
+    set(ASSIMP_LIBRARIES assimp::assimp)
+    message(STATUS "vcpkg ASSIMP_LIBRARIES: ${ASSIMP_LIBRARIES} ASSIMP_INCLUDE: ${ASSIMP_INCLUDE_DIR}")
+endif()
 
 if(${EXAMPLE_VULKAN})
     find_package(Vulkan REQUIRED)
     include_directories(BEFORE SYSTEM "${Vulkan_INCLUDE_DIR}")
 endif()
-
 
 add_subdirectory(src)
 if(${PRACTICE})
