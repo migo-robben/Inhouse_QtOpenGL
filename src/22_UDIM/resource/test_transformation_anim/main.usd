@@ -1,0 +1,58 @@
+#usda 1.0
+(
+    defaultPrim = "pPlane1"
+    endTimeCode = 10
+    framesPerSecond = 24
+    metersPerUnit = 0.01
+    startTimeCode = 1
+    timeCodesPerSecond = 24
+    upAxis = "Y"
+)
+
+def Mesh "pPlane1" (
+    kind = "component"
+)
+{
+    uniform bool doubleSided = 1
+    float3[] extent = [(-0.5, 0, -0.5), (0.5, 0, 0.5)]
+    int[] faceVertexCounts = [4]
+    int[] faceVertexIndices = [0, 1, 3, 2]
+    normal3f[] normals = [(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0)] (
+        interpolation = "faceVarying"
+    )
+    point3f[] points = [(-0.5, 0, 0.5), (0.5, 0, 0.5), (-0.5, 0, -0.5), (0.5, 0, -0.5)]
+    texCoord2f[] primvars:map1 = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+        interpolation = "vertex"
+    )
+    int[] primvars:map1:indices = [0, 1, 3, 2]
+    uniform token subdivisionScheme = "none"
+    float3 xformOp:rotateXYZ.timeSamples = {
+        1: (0, 0, 0),
+        2: (0, 0, 3.0864198),
+        3: (0, 0, 11.358025),
+        4: (0, 0, 23.333334),
+        5: (0, 0, 37.530865),
+        6: (0, 0, 52.469135),
+        7: (0, 0, 66.666664),
+        8: (0, 0, 78.641975),
+        9: (0, 0, 86.91358),
+        10: (0, 0, 90),
+    }
+    float3 xformOp:scale.timeSamples = {
+        1: (1, 1, 1),
+    }
+    double3 xformOp:translate.timeSamples = {
+        1: (0, 0, 0),
+        2: (0, 0.034293552812071325, 0),
+        3: (0, 0.12620027434842251, 0),
+        4: (0, 0.25925925925925924, 0),
+        5: (0, 0.41700960219478744, 0),
+        6: (0, 0.5829903978052127, 0),
+        7: (0, 0.7407407407407407, 0),
+        8: (0, 0.8737997256515775, 0),
+        9: (0, 0.9657064471879285, 0),
+        10: (0, 1, 0),
+    }
+    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+}
+

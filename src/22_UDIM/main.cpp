@@ -116,8 +116,8 @@ void GLWidget::initializeGL() {
     initShaders();
     initTexture();
 
-    testReadUSDFile();
-    testTriangulation();
+//    testReadUSDFile();
+//    testTriangulation();
     testPointAnimation();
 
 //    initGeometry();
