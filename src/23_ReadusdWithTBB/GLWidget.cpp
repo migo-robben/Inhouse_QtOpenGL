@@ -79,7 +79,7 @@ void GLWidget::initShaders() {
 }
 
 void GLWidget::initGeometry() {
-    QString usdFilePath = QString("/resource/geometry/usdAnim/school_bus_sub_low.usd");
+    QString usdFilePath = QString("src/resource/geometry/usdAnim/school_bus_sub_low.usd");
     parseUSDFile(usdFilePath);
 }
 

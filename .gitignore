@@ -93,3 +93,8 @@ fabric.properties
 .mayaSwatches
 *.tx
 /src/20_SkeletalAnimation/resource/tmp/
+/src/resource/geometry/usdAnim/
+
+
+# python
+*.pyc

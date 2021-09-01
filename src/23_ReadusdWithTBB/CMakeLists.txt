@@ -37,23 +37,29 @@ set(Boost_LIB_PREFIX "")
 set(BOOST_ROOT ${USD_HOME})
 set(Boost_INCLUDE_DIRS ${USD_HOME}/include/boost-1_70)
 set(Boost_LIBRARY_DIRS ${USD_HOME}/lib)
-set(Boost_LIBRARIES
-        ${Boost_LIBRARY_DIRS}/boost_log-vc142-mt-gd-x64-1_70.lib
-        ${Boost_LIBRARY_DIRS}/boost_python37-vc142-mt-gd-x64-1_70.lib
-        ${Boost_LIBRARY_DIRS}/boost_date_time-vc142-mt-gd-x64-1_70.lib
-        ${Boost_LIBRARY_DIRS}/boost_filesystem-vc142-mt-gd-x64-1_70.lib
-        ${Boost_LIBRARY_DIRS}/boost_thread-vc142-mt-gd-x64-1_70.lib
-        ${Boost_LIBRARY_DIRS}/boost_regex-vc142-mt-gd-x64-1_70.lib
-        ${Boost_LIBRARY_DIRS}/boost_chrono-vc142-mt-gd-x64-1_70.lib
-        ${Boost_LIBRARY_DIRS}/boost_atomic-vc142-mt-gd-x64-1_70.lib
-        ${Boost_LIBRARY_DIRS}/boost_log-vc142-mt-x64-1_70.lib
-        ${Boost_LIBRARY_DIRS}/boost_python37-vc142-mt-x64-1_70.lib
-        ${Boost_LIBRARY_DIRS}/boost_date_time-vc142-mt-x64-1_70.lib
-        ${Boost_LIBRARY_DIRS}/boost_filesystem-vc142-mt-x64-1_70.lib
-        ${Boost_LIBRARY_DIRS}/boost_thread-vc142-mt-x64-1_70.lib
-        ${Boost_LIBRARY_DIRS}/boost_regex-vc142-mt-x64-1_70.lib
-        ${Boost_LIBRARY_DIRS}/boost_chrono-vc142-mt-x64-1_70.lib
-        ${Boost_LIBRARY_DIRS}/boost_atomic-vc142-mt-x64-1_70.lib)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_definitions(-D TBB_USE_DEBUG=0)
+    set(Boost_LIBRARIES
+            #${Boost_LIBRARY_DIRS}/boost_log-vc142-mt-gd-x64-1_70.lib
+            ${Boost_LIBRARY_DIRS}/boost_python37-vc142-mt-gd-x64-1_70.lib
+            ${Boost_LIBRARY_DIRS}/boost_date_time-vc142-mt-gd-x64-1_70.lib
+            ${Boost_LIBRARY_DIRS}/boost_filesystem-vc142-mt-gd-x64-1_70.lib
+            ${Boost_LIBRARY_DIRS}/boost_thread-vc142-mt-gd-x64-1_70.lib
+            ${Boost_LIBRARY_DIRS}/boost_regex-vc142-mt-gd-x64-1_70.lib
+            ${Boost_LIBRARY_DIRS}/boost_chrono-vc142-mt-gd-x64-1_70.lib
+            ${Boost_LIBRARY_DIRS}/boost_atomic-vc142-mt-gd-x64-1_70.lib)
+else()
+    set(Boost_LIBRARIES
+            #${Boost_LIBRARY_DIRS}/boost_log-vc142-mt-x64-1_70.lib
+            ${Boost_LIBRARY_DIRS}/boost_python37-vc142-mt-x64-1_70.lib
+            ${Boost_LIBRARY_DIRS}/boost_date_time-vc142-mt-x64-1_70.lib
+            ${Boost_LIBRARY_DIRS}/boost_filesystem-vc142-mt-x64-1_70.lib
+            ${Boost_LIBRARY_DIRS}/boost_thread-vc142-mt-x64-1_70.lib
+            ${Boost_LIBRARY_DIRS}/boost_regex-vc142-mt-x64-1_70.lib
+            ${Boost_LIBRARY_DIRS}/boost_chrono-vc142-mt-x64-1_70.lib
+            ${Boost_LIBRARY_DIRS}/boost_atomic-vc142-mt-x64-1_70.lib)
+
+endif()
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../"
         ${Python3_INCLUDE_DIRS}

@@ -78,6 +78,7 @@ void usdParser::getDataBySpecifyFrame_default(UsdTimeCode timeCode) {
             VtVec3iArray vt_triFaceVertexIndices;
             VtIntArray vt_primitiveParam;
             VtVec3iArray vt_triEdgeIndices;
+            //VtIntArray vt_triEdgeIndices;  // for newly usd version
 
             // Get Attribute Values
             UsdGeomMesh processGeom(prim);
@@ -323,6 +324,7 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
                 VtVec3iArray vt_triFaceVertexIndices;
                 VtIntArray vt_primitiveParam;
                 VtVec3iArray vt_triEdgeIndices;
+                //VtIntArray vt_triEdgeIndices;
 
                 // Get Attribute Values
                 UsdGeomMesh processGeom(prim);

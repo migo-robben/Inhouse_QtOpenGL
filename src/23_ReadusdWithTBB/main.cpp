@@ -99,6 +99,7 @@ void testTriangulation() {
     VtVec3iArray trianglesFaceVertexIndices;
     VtIntArray primitiveParam;
     VtVec3iArray trianglesEdgeIndices;
+    //VtIntArray trianglesEdgeIndices;
 
     HdMeshUtil mesh_util(&topology, prim.GetPath());
     mesh_util.ComputeTriangleIndices(&trianglesFaceVertexIndices, &primitiveParam, &trianglesEdgeIndices);
