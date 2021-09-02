@@ -9,7 +9,8 @@
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLFunctions_4_5_Core>
 #include <QOpenGLFramebufferObjectFormat>
-
+#include <QTimer>
+#include <QElapsedTimer>
 #include <QDebug>
 
 #include "Helper/Camera.h"
@@ -53,6 +54,10 @@ private:
     Camera *camera;
     QMatrix4x4 model;
     QPoint mousePos;
+
+    int drewNumber = 0;
+    int lastDrew = 0;
+    QElapsedTimer drewTimer;
 
     std::shared_ptr<usdParser> parser;
 

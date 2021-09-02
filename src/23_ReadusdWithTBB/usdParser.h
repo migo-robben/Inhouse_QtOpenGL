@@ -40,15 +40,24 @@
 #include <tbb/tbb.h>
 
 using namespace pxr;
+using namespace std;
+
+struct VertexData{
+    VtVec3fArray vt_gl_position;
+    VtVec2fArray vt_gl_texCoord;
+    VtVec3fArray vt_gl_normal;
+    std::vector<GLuint> indices;
+};
 
 class usdParser : protected QOpenGLFunctions_4_5_Core {
 public:
     explicit usdParser(QString &path);
 
     void getUVToken(UsdPrim &prim, TfToken &tf_uv, bool &uvs);
-    void getDataBySpecifyFrame_default(UsdTimeCode timeCode);
+    //void getDataBySpecifyFrame_default(UsdTimeCode timeCode);
     void getDataBySpecifyFrame_TBB(UsdTimeCode timeCode);
     void setupAttributePointer(QOpenGLShaderProgram *program);
+    void updateVertex();
     void initGeometry();
 
     void drawGeometry(QOpenGLShaderProgram *program, QMatrix4x4 model, QMatrix4x4 view, QMatrix4x4 projection);
@@ -65,7 +74,7 @@ public:
     double fps;
     double animStartFrame;
     double animEndFrame;
-    UsdTimeCode currenTimeCode;
+    UsdTimeCode currentTimeCode;
     int attributeCount = 3;
 
 protected:
@@ -73,11 +82,12 @@ protected:
     QVector<QOpenGLBuffer> vbos;
     QOpenGLBuffer ebo;
 
-    VtVec3fArray vt_gl_position;
-    VtVec2fArray vt_gl_texCoord;
-    VtVec3fArray vt_gl_normal;
+//    VtVec3fArray vt_gl_position;
+//    VtVec2fArray vt_gl_texCoord;
+//    VtVec3fArray vt_gl_normal;
+//    std::vector<GLuint> indices{};
 
-    std::vector<GLuint> indices{};
+    map<double, VertexData> geometry_data;
 
     bool m_has_triangulated = false;
     int m_indicesCount = 0;

@@ -37,7 +37,7 @@ void usdParser::getUVToken(UsdPrim &prim, TfToken &tf_uv, bool &uvs) {
         return;
     }
 }
-
+/*
 void usdParser::getDataBySpecifyFrame_default(UsdTimeCode timeCode) {
     spdlog::info("\n\tGet data by specify frame: {}", timeCode.GetValue());
 
@@ -211,11 +211,24 @@ void usdParser::getDataBySpecifyFrame_default(UsdTimeCode timeCode) {
     m_timer.setEndPoint();
     m_timer.printDuration("InitGeometry buffer allocate");
 }
-
+*/
 void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
+    auto search = geometry_data.find(timeCode.GetValue());
+    if(search != geometry_data.end()){
+//        qDebug() << "this timeCode " << timeCode.GetValue() << " is already in the geometry_data";
+        return;
+    }
+    if(timeCode.GetValue() < stage->GetStartTimeCode() || timeCode.GetValue() > stage->GetEndTimeCode()){
+//        qDebug() << "this timeCode "
+//                 << timeCode.GetValue() << " is not a valid timeCode, the range must be from"
+//                 << stage->GetStartTimeCode()
+//                 << "to"<< stage->GetEndTimeCode();
+        return;
+    }
+
     spdlog::info("\n\tGet data by specify frame: {}", timeCode.GetValue());
 
-    currenTimeCode = timeCode;
+    currentTimeCode = timeCode;
 
     myTimer m_timer;
     m_timer.setStartPoint();
@@ -234,7 +247,7 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
             // Get Visibility
             UsdAttribute attr_visibility = prim.GetAttribute(TfToken("visibility"));
             TfToken visibility;
-            attr_visibility.Get(&visibility, currenTimeCode);
+            attr_visibility.Get(&visibility, currentTimeCode);
             if (visibility == UsdGeomTokens->invisible) {
                 continue;
             }
@@ -245,8 +258,8 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
             UsdAttribute attr_faceVertexCounts = prim.GetAttribute(TfToken("faceVertexCounts"));
             UsdAttribute attr_faceVertexIndices = prim.GetAttribute(TfToken("faceVertexIndices"));
 
-            attr_faceVertexCounts.Get(&vt_faceVertexCounts, currenTimeCode);
-            attr_faceVertexIndices.Get(&vt_faceVertexIndices, currenTimeCode);
+            attr_faceVertexCounts.Get(&vt_faceVertexCounts, currentTimeCode);
+            attr_faceVertexIndices.Get(&vt_faceVertexIndices, currentTimeCode);
 
             currentProcessMeshData.emplace_back(meshIndex);
             currentProcessMeshData.emplace_back(index_pointer); // represent start pointer
@@ -263,10 +276,12 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
     }
 
     // ----- Preallocate memory ----- //
-    indices.resize(totalTriangulation * 3); // 3 points per triangulation
-    vt_gl_position.resize(index_pointer);
-    vt_gl_texCoord.resize(index_pointer);
-    vt_gl_normal.resize(index_pointer);
+    geometry_data[currentTimeCode.GetValue()] = VertexData();
+    VertexData &vertex_data = geometry_data[timeCode.GetValue()];
+    vertex_data.indices.resize(totalTriangulation * 3); // 3 points per triangulation
+    vertex_data.vt_gl_position.resize(index_pointer);
+    vertex_data.vt_gl_texCoord.resize(index_pointer);
+    vertex_data.vt_gl_normal.resize(index_pointer);
 
     // ----- Actually the number of points, uv, normal ----- //
     int actually_points = 0, actually_uv = 0, actually_normal = 0;
@@ -274,13 +289,13 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
     // ----- Parallel traverse all prim ----- //
     tbb::parallel_do(
             stage->TraverseAll(),
-            [this, &timeCode, &actually_points, &meshDict](UsdPrim prim) {
+            [this, &timeCode, &actually_points, &meshDict, &vertex_data ](UsdPrim prim) {
                 if (prim.GetTypeName() != "Mesh") {
                     return;
                 } else {
                     UsdAttribute attr_visibility = prim.GetAttribute(TfToken("visibility"));
                     TfToken visibility;
-                    attr_visibility.Get(&visibility, currenTimeCode);
+                    attr_visibility.Get(&visibility, currentTimeCode);
                     if (visibility == UsdGeomTokens->invisible) {
                         return;
                     }
@@ -360,14 +375,14 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
 
                 tbb::parallel_for(0, int(vt_faceVertexIndices.size()), 1,
                                   [this, &vt_faceVertexIndices, &ModelTransform, &start_pointer, &vt_faceVertexIndices_reorder,
-                                          vt_points, vt_normals, vt_uv_indices, vt_uvs, &has_normal, &tf_normal_interpolation, &has_uv, &tf_uv_interpolation](int faceVertexIndex_index) {
+                                          vt_points, vt_normals, vt_uv_indices, vt_uvs, &has_normal, &tf_normal_interpolation, &has_uv, &tf_uv_interpolation, &vertex_data](int faceVertexIndex_index) {
 
                 // int[] faceVertexIndices = [0, 1, 4, 3, 1, 2, ...]
                 int faceVertexIndex = vt_faceVertexIndices[faceVertexIndex_index];
 
                 // ----- Point ----- //
                 GfVec3f vt_point = ModelTransform.Transform(vt_points[faceVertexIndex]);
-                vt_gl_position[faceVertexIndex_index + start_pointer] = vt_point;
+                vertex_data.vt_gl_position[faceVertexIndex_index + start_pointer] = vt_point;
 
                 // e.g.   int[] faceVertexIndices     = [2, 0, 1, 3, 5, 4, 2, 3]
                 //     -> int[] faceVertexIndices_new = [0, 1, 2, 3, 4, 5, 6, 7]
@@ -383,13 +398,13 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
                     }
                     // Set Normal
                     if (vt_normals.empty()) {
-                        vt_gl_normal[faceVertexIndex_index + start_pointer] = GfVec3f(0.0, 1.0, 0.0);
+                        vertex_data.vt_gl_normal[faceVertexIndex_index + start_pointer] = GfVec3f(0.0, 1.0, 0.0);
                     } else {
                         GfVec3f vt_normal = vt_normals[normal_index];
-                        vt_gl_normal[faceVertexIndex_index + start_pointer] = vt_normal;
+                        vertex_data.vt_gl_normal[faceVertexIndex_index + start_pointer] = vt_normal;
                     }
                 } else {
-                    vt_gl_normal[faceVertexIndex_index + start_pointer] = GfVec3f(0.0, 1.0, 0.0);
+                    vertex_data.vt_gl_normal[faceVertexIndex_index + start_pointer] = GfVec3f(0.0, 1.0, 0.0);
                 }
 
                 // ----- UV ----- //
@@ -410,13 +425,13 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
                     }
                     // Set UV
                     if (vt_uvs.empty()) {
-                        vt_gl_texCoord[faceVertexIndex_index + start_pointer] = GfVec2f(0.0, 0.0);
+                        vertex_data.vt_gl_texCoord[faceVertexIndex_index + start_pointer] = GfVec2f(0.0, 0.0);
                     } else {
                         GfVec2f vt_uv = vt_uvs[uv_index];
-                        vt_gl_texCoord[faceVertexIndex_index + start_pointer] = vt_uv;
+                        vertex_data.vt_gl_texCoord[faceVertexIndex_index + start_pointer] = vt_uv;
                     }
                 } else {
-                    vt_gl_texCoord[faceVertexIndex_index + start_pointer] = GfVec2f(0.0, 0.0);
+                    vertex_data.vt_gl_texCoord[faceVertexIndex_index + start_pointer] = GfVec2f(0.0, 0.0);
                 }
             });
 
@@ -437,9 +452,9 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
                     // vt_triFaceVertexIndices: [(0, 1, 3), (1, 2, 3), (2, 3, 1), ...}
                     int offsetPtr = (number_of_triangulation - int(vt_triFaceVertexIndices.size())) * 3;
                     for (int i = 0; i < vt_triFaceVertexIndices.size(); i++) {
-                        indices[offsetPtr + i * 3 + 0] = vt_triFaceVertexIndices[i][0] + start_pointer;
-                        indices[offsetPtr + i * 3 + 1] = vt_triFaceVertexIndices[i][1] + start_pointer;
-                        indices[offsetPtr + i * 3 + 2] = vt_triFaceVertexIndices[i][2] + start_pointer;
+                        vertex_data.indices[offsetPtr + i * 3 + 0] = vt_triFaceVertexIndices[i][0] + start_pointer;
+                        vertex_data.indices[offsetPtr + i * 3 + 1] = vt_triFaceVertexIndices[i][1] + start_pointer;
+                        vertex_data.indices[offsetPtr + i * 3 + 2] = vt_triFaceVertexIndices[i][2] + start_pointer;
                     }
                 }
                 subtimer.setEndPoint();
@@ -448,9 +463,10 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
                 subtimer.printDuration(info_triangulation.toStdString().c_str());
             });
 
-    vt_gl_position.resize(actually_points);
-    vt_gl_texCoord.resize(actually_points);
-    vt_gl_normal.resize(actually_points);
+    vertex_data.vt_gl_position.resize(actually_points);
+    vertex_data.vt_gl_texCoord.resize(actually_points);
+    vertex_data.vt_gl_normal.resize(actually_points);
+    qDebug() << "indices size: " << vertex_data.indices.size();
 
     m_has_triangulated = true;
     m_timer.setEndPoint();
@@ -465,21 +481,24 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
 void usdParser::initGeometry() {
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
 
+    auto& vertex_data = geometry_data[currentTimeCode.GetValue()];
+    qDebug() << "indices size: " << vertex_data.indices.size();
+
     vbos[0].bind();
     vbos[0].setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vbos[0].allocate(vt_gl_position.data(), vt_gl_position.size() * sizeof(GfVec3f));
+    vbos[0].allocate(vertex_data.vt_gl_position.data(), vertex_data.vt_gl_position.size() * sizeof(GfVec3f));
 
     vbos[1].bind();
     vbos[1].setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vbos[1].allocate(vt_gl_texCoord.data(), vt_gl_texCoord.size() * sizeof(GfVec2f));
+    vbos[1].allocate(vertex_data.vt_gl_texCoord.data(), vertex_data.vt_gl_texCoord.size() * sizeof(GfVec2f));
 
     vbos[2].bind();
     vbos[2].setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vbos[2].allocate(vt_gl_normal.data(), vt_gl_normal.size() * sizeof(GfVec3f));
+    vbos[2].allocate(vertex_data.vt_gl_normal.data(), vertex_data.vt_gl_normal.size() * sizeof(GfVec3f));
 
     ebo.setUsagePattern(QOpenGLBuffer::StaticDraw);
     ebo.bind();
-    ebo.allocate(indices.data(), indices.size() * sizeof(GLuint));
+    ebo.allocate(vertex_data.indices.data(), vertex_data.indices.size() * sizeof(GLuint));
 }
 
 void usdParser::setupAttributePointer(QOpenGLShaderProgram *program) {
@@ -507,6 +526,8 @@ void usdParser::setupAttributePointer(QOpenGLShaderProgram *program) {
 }
 
 void usdParser::drawGeometry(QOpenGLShaderProgram *program, QMatrix4x4 model, QMatrix4x4 view, QMatrix4x4 projection) {
+    auto& vertex_data = geometry_data[currentTimeCode.GetValue()];
+
     program->bind();
 
     program->setUniformValue("model", model);
@@ -514,7 +535,7 @@ void usdParser::drawGeometry(QOpenGLShaderProgram *program, QMatrix4x4 model, QM
     program->setUniformValue("projection", projection);
 
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
-    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, (void*)nullptr);
+    glDrawElements(GL_TRIANGLES, vertex_data.indices.size(), GL_UNSIGNED_INT, (void*)nullptr);
 }
 
 bool usdParser::fanTriangulate(GfVec3i &dst, VtArray<int> const &src, int offset, int index, int size, bool flip) {
@@ -575,4 +596,21 @@ bool usdParser::simpleComputeTriangleIndices(VtArray<int> &faceVertexCounts, VtA
     }
 
     return invalidTopology;
+}
+
+void usdParser::updateVertex() {
+    getDataBySpecifyFrame_TBB(UsdTimeCode(currentTimeCode.GetValue() + 1.0));
+
+    auto& vertex_data = geometry_data[currentTimeCode.GetValue()];
+    vbos[0].bind();
+    vbos[0].write(0, vertex_data.vt_gl_position.data(), vertex_data.vt_gl_position.size()* sizeof(GfVec3f));
+    vbos[0].release();
+
+    vbos[1].bind();
+    vbos[0].write(0, vertex_data.vt_gl_texCoord.data(), vertex_data.vt_gl_texCoord.size()* sizeof(GfVec2f));
+    vbos[1].release();
+
+    vbos[2].bind();
+    vbos[0].write(0, vertex_data.vt_gl_normal.data(), vertex_data.vt_gl_normal.size()* sizeof(GfVec3f));
+    vbos[2].release();
 }

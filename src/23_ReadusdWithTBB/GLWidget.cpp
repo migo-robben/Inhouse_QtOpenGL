@@ -17,6 +17,11 @@ GLWidget::GLWidget(QWidget *parent)
 
     QVector3D cameraPos(0.0, 0.0, 5);
     camera = new Camera(cameraPos);
+
+    QTimer *timer = new QTimer(this);
+    connect(timer, SIGNAL(timeout()), this, SLOT(update()));
+    timer->start(5);
+    drewTimer.start();
 }
 
 GLWidget::~GLWidget() {
@@ -51,12 +56,18 @@ void GLWidget::paintGL() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+    parser->updateVertex();
+
     model.setToIdentity();
     parser->drawGeometry(
             SHADER(0),
             model,
             camera->getCameraView(),
             camera->getCameraProjection());
+    int current = drewTimer.elapsed();
+    qDebug() << "painting. drewNumber " << drewNumber << " fps/s " << 1000.0f/(current - lastDrew);
+    lastDrew = current;
+    drewNumber+=1;
 }
 
 void GLWidget::resizeGL(int width, int height) {
@@ -79,14 +90,14 @@ void GLWidget::initShaders() {
 }
 
 void GLWidget::initGeometry() {
-    QString usdFilePath = QString("src/resource/geometry/usdAnim/school_bus_sub_low.usd");
+    QString usdFilePath = QString("src/resource/geometry/usdAnim/rubbertoy1.usd");
     parseUSDFile(usdFilePath);
 }
 
 void GLWidget::parseUSDFile(QString &usdFilePath) {
     parser = std::make_shared<usdParser>(usdFilePath);
 
-    int currentFrame = 1;
+    double currentFrame = parser->animStartFrame;
 
     // Default method
 //    parser->getDataBySpecifyFrame_default(UsdTimeCode(currentFrame));
@@ -107,8 +118,9 @@ void GLWidget::glSetting() {
 void GLWidget::cleanup() {
     makeCurrent();
 
-    qDeleteAll(programs);
-    programs.clear();
+//    qDeleteAll(programs);  // got exception here
+//    programs.clear();
+
     delete camera;
 
     camera = nullptr;
