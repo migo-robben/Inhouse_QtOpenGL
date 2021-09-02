@@ -218,13 +218,6 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
 //        qDebug() << "this timeCode " << timeCode.GetValue() << " is already in the geometry_data";
         return;
     }
-    if(timeCode.GetValue() < stage->GetStartTimeCode() || timeCode.GetValue() > stage->GetEndTimeCode()){
-//        qDebug() << "this timeCode "
-//                 << timeCode.GetValue() << " is not a valid timeCode, the range must be from"
-//                 << stage->GetStartTimeCode()
-//                 << "to"<< stage->GetEndTimeCode();
-        return;
-    }
 
     spdlog::info("\n\tGet data by specify frame: {}", timeCode.GetValue());
 
@@ -599,7 +592,14 @@ bool usdParser::simpleComputeTriangleIndices(VtArray<int> &faceVertexCounts, VtA
 }
 
 void usdParser::updateVertex() {
-    getDataBySpecifyFrame_TBB(UsdTimeCode(currentTimeCode.GetValue() + 1.0));
+
+    currentTimeCode = UsdTimeCode(currentTimeCode.GetValue() + 1.0);
+
+    if(currentTimeCode.GetValue() < stage->GetEndTimeCode()){
+        getDataBySpecifyFrame_TBB(currentTimeCode);
+    }else{
+        currentTimeCode = UsdTimeCode(animStartFrame);
+    }
 
     auto& vertex_data = geometry_data[currentTimeCode.GetValue()];
     vbos[0].bind();
