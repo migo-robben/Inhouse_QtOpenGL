@@ -232,8 +232,8 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
 
     myTimer m_timer;
     m_timer.setStartPoint();
-    if (!m_has_triangulated)
-        m_indicesCount = 0;
+//    if (!m_has_triangulated)
+    m_indicesCount = 0;
 
     // ----- Mesh dictionary ----- //
     // { "mesh1":{0, 0, 4, 2}, "mesh2":{1, 4, 28, 14}, ... }
@@ -468,7 +468,7 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
     vertex_data.vt_gl_normal.resize(actually_points);
     qDebug() << "indices size: " << vertex_data.indices.size();
 
-    m_has_triangulated = true;
+//    m_has_triangulated = true;
     m_timer.setEndPoint();
     m_timer.printDuration("TraverseAll");
 
@@ -607,10 +607,10 @@ void usdParser::updateVertex() {
     vbos[0].release();
 
     vbos[1].bind();
-    vbos[0].write(0, vertex_data.vt_gl_texCoord.data(), vertex_data.vt_gl_texCoord.size()* sizeof(GfVec2f));
+    vbos[1].write(0, vertex_data.vt_gl_texCoord.data(), vertex_data.vt_gl_texCoord.size()* sizeof(GfVec2f));
     vbos[1].release();
 
     vbos[2].bind();
-    vbos[0].write(0, vertex_data.vt_gl_normal.data(), vertex_data.vt_gl_normal.size()* sizeof(GfVec3f));
+    vbos[2].write(0, vertex_data.vt_gl_normal.data(), vertex_data.vt_gl_normal.size()* sizeof(GfVec3f));
     vbos[2].release();
 }
