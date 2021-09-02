@@ -56,6 +56,7 @@ public:
     void getUVToken(UsdPrim &prim, TfToken &tf_uv, bool &uvs);
     //void getDataBySpecifyFrame_default(UsdTimeCode timeCode);
     void getDataBySpecifyFrame_TBB(UsdTimeCode timeCode);
+    void getDataByAll();
     void setupAttributePointer(QOpenGLShaderProgram *program);
     void updateVertex();
     void initGeometry();

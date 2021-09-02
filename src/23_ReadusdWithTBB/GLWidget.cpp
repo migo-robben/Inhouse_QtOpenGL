@@ -65,7 +65,7 @@ void GLWidget::paintGL() {
             camera->getCameraView(),
             camera->getCameraProjection());
     int current = drewTimer.elapsed();
-    qDebug() << "painting. drewNumber " << drewNumber << " fps/s " << 1000.0f/(current - lastDrew);
+    qDebug() << "painting - drewNumber " << drewNumber << " fps/s " << 1000.0f/(current - lastDrew) << "frame: " <<parser->currentTimeCode.GetValue();
     lastDrew = current;
     drewNumber+=1;
 }
@@ -103,8 +103,13 @@ void GLWidget::parseUSDFile(QString &usdFilePath) {
 //    parser->getDataBySpecifyFrame_default(UsdTimeCode(currentFrame));
 
     // TBB method
-    parser->getDataBySpecifyFrame_TBB(UsdTimeCode(currentFrame));
+//    parser->getDataBySpecifyFrame_TBB(UsdTimeCode(currentFrame));
+//    parser->setupAttributePointer(SHADER(0));
+
+    // Read all
+    parser->getDataByAll();
     parser->setupAttributePointer(SHADER(0));
+    qDebug() << "getDataByAll finished";
 }
 
 void GLWidget::initTexture() {

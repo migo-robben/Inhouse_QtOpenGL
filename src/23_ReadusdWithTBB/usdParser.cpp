@@ -221,7 +221,7 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
 
     spdlog::info("\n\tGet data by specify frame: {}", timeCode.GetValue());
 
-    currentTimeCode = timeCode;
+//    currentTimeCode = timeCode;
 
     myTimer m_timer;
     m_timer.setStartPoint();
@@ -240,7 +240,7 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
             // Get Visibility
             UsdAttribute attr_visibility = prim.GetAttribute(TfToken("visibility"));
             TfToken visibility;
-            attr_visibility.Get(&visibility, currentTimeCode);
+            attr_visibility.Get(&visibility, timeCode);
             if (visibility == UsdGeomTokens->invisible) {
                 continue;
             }
@@ -251,8 +251,8 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
             UsdAttribute attr_faceVertexCounts = prim.GetAttribute(TfToken("faceVertexCounts"));
             UsdAttribute attr_faceVertexIndices = prim.GetAttribute(TfToken("faceVertexIndices"));
 
-            attr_faceVertexCounts.Get(&vt_faceVertexCounts, currentTimeCode);
-            attr_faceVertexIndices.Get(&vt_faceVertexIndices, currentTimeCode);
+            attr_faceVertexCounts.Get(&vt_faceVertexCounts, timeCode);
+            attr_faceVertexIndices.Get(&vt_faceVertexIndices, timeCode);
 
             currentProcessMeshData.emplace_back(meshIndex);
             currentProcessMeshData.emplace_back(index_pointer); // represent start pointer
@@ -269,7 +269,7 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
     }
 
     // ----- Preallocate memory ----- //
-    geometry_data[currentTimeCode.GetValue()] = VertexData();
+    geometry_data[timeCode.GetValue()] = VertexData();
     VertexData &vertex_data = geometry_data[timeCode.GetValue()];
     vertex_data.indices.resize(totalTriangulation * 3); // 3 points per triangulation
     vertex_data.vt_gl_position.resize(index_pointer);
@@ -288,7 +288,7 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
                 } else {
                     UsdAttribute attr_visibility = prim.GetAttribute(TfToken("visibility"));
                     TfToken visibility;
-                    attr_visibility.Get(&visibility, currentTimeCode);
+                    attr_visibility.Get(&visibility, timeCode);
                     if (visibility == UsdGeomTokens->invisible) {
                         return;
                     }
@@ -459,23 +459,22 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
     vertex_data.vt_gl_position.resize(actually_points);
     vertex_data.vt_gl_texCoord.resize(actually_points);
     vertex_data.vt_gl_normal.resize(actually_points);
-    qDebug() << "indices size: " << vertex_data.indices.size();
+    //qDebug() << "indices size: " << vertex_data.indices.size();
 
 //    m_has_triangulated = true;
     m_timer.setEndPoint();
     m_timer.printDuration("TraverseAll");
 
-    m_timer.setStartPoint();
-    initGeometry();
-    m_timer.setEndPoint();
-    m_timer.printDuration("InitGeometry buffer allocate");
+//    m_timer.setStartPoint();
+//    initGeometry();
+//    m_timer.setEndPoint();
+//    m_timer.printDuration("InitGeometry buffer allocate");
 }
 
 void usdParser::initGeometry() {
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
 
     auto& vertex_data = geometry_data[currentTimeCode.GetValue()];
-    qDebug() << "indices size: " << vertex_data.indices.size();
 
     vbos[0].bind();
     vbos[0].setUsagePattern(QOpenGLBuffer::StaticDraw);
@@ -493,6 +492,7 @@ void usdParser::initGeometry() {
     ebo.bind();
     ebo.allocate(vertex_data.indices.data(), vertex_data.indices.size() * sizeof(GLuint));
 }
+
 
 void usdParser::setupAttributePointer(QOpenGLShaderProgram *program) {
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
@@ -600,6 +600,11 @@ void usdParser::updateVertex() {
     }else{
         currentTimeCode = UsdTimeCode(animStartFrame);
     }
+    myTimer m_timer;
+    m_timer.setStartPoint();
+    initGeometry();
+    m_timer.setEndPoint();
+    //m_timer.printDuration("InitGeometry buffer allocate");
 
     auto& vertex_data = geometry_data[currentTimeCode.GetValue()];
     vbos[0].bind();
@@ -613,4 +618,30 @@ void usdParser::updateVertex() {
     vbos[2].bind();
     vbos[2].write(0, vertex_data.vt_gl_normal.data(), vertex_data.vt_gl_normal.size()* sizeof(GfVec3f));
     vbos[2].release();
+
+    ebo.bind();
+    ebo.write(0, vertex_data.indices.data(), vertex_data.indices.size()*sizeof(GLuint));
+    ebo.release();
+}
+
+void usdParser::getDataByAll() {
+    UsdTimeCode startTimeCode = stage->GetStartTimeCode();
+    UsdTimeCode endTimeCode = stage->GetEndTimeCode();
+    std::vector<UsdTimeCode> timeCodes;
+    while(startTimeCode < endTimeCode){
+
+        //getDataBySpecifyFrame_TBB(startTimeCode);
+        timeCodes.push_back(startTimeCode);
+        startTimeCode = UsdTimeCode(startTimeCode.GetValue() + 1);
+    }
+
+    double startTime = startTimeCode.GetValue();
+    double endTime = endTimeCode.GetValue();
+
+    tbb::parallel_for_each(
+            timeCodes,
+            [this](UsdTimeCode step)
+    {
+        getDataBySpecifyFrame_TBB(UsdTimeCode(step));
+    });
 }
