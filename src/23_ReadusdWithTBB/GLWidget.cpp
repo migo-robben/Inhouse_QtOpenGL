@@ -109,7 +109,7 @@ void GLWidget::parseUSDFile(QString &usdFilePath) {
     // Read all
     parser->getDataByAll();
     parser->setupAttributePointer(SHADER(0));
-    qDebug() << "getDataByAll finished";
+    qDebug() << "parseUSDFile finished";
 }
 
 void GLWidget::initTexture() {

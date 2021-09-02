@@ -72,10 +72,10 @@ private:
     QString usdFilePath;
 
 public:
-    double fps;
     double animStartFrame;
     double animEndFrame;
     UsdTimeCode currentTimeCode;
+    UsdTimeCode lastDrewTimeCode;
     int attributeCount = 3;
 
 protected:
@@ -83,16 +83,9 @@ protected:
     QVector<QOpenGLBuffer> vbos;
     QOpenGLBuffer ebo;
 
-//    VtVec3fArray vt_gl_position;
-//    VtVec2fArray vt_gl_texCoord;
-//    VtVec3fArray vt_gl_normal;
-//    std::vector<GLuint> indices{};
-
     map<double, VertexData> geometry_data;
 
     bool m_has_triangulated = false;
-    int m_indicesCount = 0;
-    int m_indexIncrease = 0;
 
     std::mutex mtx;
 };

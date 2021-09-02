@@ -4,9 +4,10 @@ usdParser::usdParser(QString &path) : usdFilePath(path), ebo(QOpenGLBuffer::Inde
     stage = UsdStage::Open(usdFilePath.toStdString());
 
     // Base parameter
-    fps = stage->GetFramesPerSecond();
     animStartFrame = stage->GetStartTimeCode();
+    currentTimeCode = animStartFrame;
     animEndFrame = stage->GetEndTimeCode();
+    lastDrewTimeCode = UsdTimeCode(LDBL_MAX);  // init the value by max to avoid same value determined
 
     spdlog::info("\n\tParser usd file: {}\n\tAnimation start frame: {}\n\tAnimation end frame: {}",
                  usdFilePath.toStdString(),
@@ -215,18 +216,18 @@ void usdParser::getDataBySpecifyFrame_default(UsdTimeCode timeCode) {
 void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
     auto search = geometry_data.find(timeCode.GetValue());
     if(search != geometry_data.end()){
-//        qDebug() << "this timeCode " << timeCode.GetValue() << " is already in the geometry_data";
+        //qDebug() << "this timeCode " << timeCode.GetValue() << " is already in the geometry_data";
+        return;
+    }
+    if(timeCode < stage->GetStartTimeCode() || timeCode > stage->GetEndTimeCode()){
+        //qDebug() << "this is not a valid timeCode " << timeCode.GetValue();
         return;
     }
 
     spdlog::info("\n\tGet data by specify frame: {}", timeCode.GetValue());
 
-//    currentTimeCode = timeCode;
-
     myTimer m_timer;
     m_timer.setStartPoint();
-//    if (!m_has_triangulated)
-    m_indicesCount = 0;
 
     // ----- Mesh dictionary ----- //
     // { "mesh1":{0, 0, 4, 2}, "mesh2":{1, 4, 28, 14}, ... }
@@ -461,14 +462,12 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
     vertex_data.vt_gl_normal.resize(actually_points);
     //qDebug() << "indices size: " << vertex_data.indices.size();
 
-//    m_has_triangulated = true;
+    // TODO assume each frame that has different indices for now
+    // m_has_triangulated = true;
+
     m_timer.setEndPoint();
     m_timer.printDuration("TraverseAll");
 
-//    m_timer.setStartPoint();
-//    initGeometry();
-//    m_timer.setEndPoint();
-//    m_timer.printDuration("InitGeometry buffer allocate");
 }
 
 void usdParser::initGeometry() {
@@ -592,19 +591,24 @@ bool usdParser::simpleComputeTriangleIndices(VtArray<int> &faceVertexCounts, VtA
 }
 
 void usdParser::updateVertex() {
-
+    qDebug() << "updating - CTimeCode: " << currentTimeCode.GetValue();
     currentTimeCode = UsdTimeCode(currentTimeCode.GetValue() + 1.0);
 
     if(currentTimeCode.GetValue() < stage->GetEndTimeCode()){
         getDataBySpecifyFrame_TBB(currentTimeCode);
     }else{
-        currentTimeCode = UsdTimeCode(animStartFrame);
+        currentTimeCode = animStartFrame;
     }
+
+    if(lastDrewTimeCode == currentTimeCode){
+        return;
+    }
+
     myTimer m_timer;
     m_timer.setStartPoint();
     initGeometry();
     m_timer.setEndPoint();
-    //m_timer.printDuration("InitGeometry buffer allocate");
+    m_timer.printDuration("InitGeometry buffer allocate");
 
     auto& vertex_data = geometry_data[currentTimeCode.GetValue()];
     vbos[0].bind();
@@ -622,21 +626,21 @@ void usdParser::updateVertex() {
     ebo.bind();
     ebo.write(0, vertex_data.indices.data(), vertex_data.indices.size()*sizeof(GLuint));
     ebo.release();
+
+    lastDrewTimeCode = currentTimeCode;
 }
 
 void usdParser::getDataByAll() {
     UsdTimeCode startTimeCode = stage->GetStartTimeCode();
     UsdTimeCode endTimeCode = stage->GetEndTimeCode();
     std::vector<UsdTimeCode> timeCodes;
-    while(startTimeCode < endTimeCode){
+    while(startTimeCode <= endTimeCode){
 
-        //getDataBySpecifyFrame_TBB(startTimeCode);
         timeCodes.push_back(startTimeCode);
         startTimeCode = UsdTimeCode(startTimeCode.GetValue() + 1);
     }
 
-    double startTime = startTimeCode.GetValue();
-    double endTime = endTimeCode.GetValue();
+    qDebug() << "allTimeCodes: " << timeCodes.size();
 
     tbb::parallel_for_each(
             timeCodes,
