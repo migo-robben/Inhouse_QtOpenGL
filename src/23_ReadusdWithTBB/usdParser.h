@@ -60,6 +60,7 @@ public:
     void setupAttributePointer(QOpenGLShaderProgram *program);
     void updateVertex();
     void initGeometry();
+    void initGeometrySufficient();
 
     void drawGeometry(QOpenGLShaderProgram *program, QMatrix4x4 model, QMatrix4x4 view, QMatrix4x4 projection);
 

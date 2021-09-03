@@ -470,10 +470,48 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
 
 }
 
+void usdParser::initGeometrySufficient() {
+    QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
+
+    auto& vertex_data = geometry_data[currentTimeCode.GetValue()];
+    qDebug() << "allocate "
+             << vertex_data.vt_gl_position.size()
+             << vertex_data.vt_gl_texCoord.size()
+             << vertex_data.vt_gl_normal.size()
+             << vertex_data.indices.size();
+
+    int allocateConstant1 = 20000000;
+    int allocateConstant2 = 20000000;
+    int allocateConstant3 = 20000000;
+    int allocateConstant4 = 300000000;
+
+    vbos[0].bind();
+    vbos[0].setUsagePattern(QOpenGLBuffer::StaticDraw);
+    vbos[0].allocate(nullptr, allocateConstant1 * sizeof(GfVec3f));
+
+    vbos[1].bind();
+    vbos[1].setUsagePattern(QOpenGLBuffer::StaticDraw);
+    vbos[1].allocate(nullptr, allocateConstant2 * sizeof(GfVec2f));
+
+    vbos[2].bind();
+    vbos[2].setUsagePattern(QOpenGLBuffer::StaticDraw);
+    vbos[2].allocate(nullptr, allocateConstant3 * sizeof(GfVec3f));
+
+    ebo.setUsagePattern(QOpenGLBuffer::StaticDraw);
+    ebo.bind();
+    ebo.allocate(nullptr, allocateConstant4 * sizeof(GLuint));
+}
+
 void usdParser::initGeometry() {
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
 
     auto& vertex_data = geometry_data[currentTimeCode.GetValue()];
+
+    qDebug() << "allocate "
+             << vertex_data.vt_gl_position.size()
+             << vertex_data.vt_gl_texCoord.size()
+             << vertex_data.vt_gl_normal.size()
+             << vertex_data.indices.size();
 
     vbos[0].bind();
     vbos[0].setUsagePattern(QOpenGLBuffer::StaticDraw);
@@ -604,12 +642,6 @@ void usdParser::updateVertex() {
         return;
     }
 
-    myTimer m_timer;
-    m_timer.setStartPoint();
-    initGeometry();
-    m_timer.setEndPoint();
-    m_timer.printDuration("InitGeometry buffer allocate");
-
     auto& vertex_data = geometry_data[currentTimeCode.GetValue()];
     vbos[0].bind();
     vbos[0].write(0, vertex_data.vt_gl_position.data(), vertex_data.vt_gl_position.size()* sizeof(GfVec3f));
@@ -648,4 +680,7 @@ void usdParser::getDataByAll() {
     {
         getDataBySpecifyFrame_TBB(UsdTimeCode(step));
     });
+
+    initGeometrySufficient();
 }
+
