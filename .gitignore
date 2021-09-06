@@ -98,3 +98,5 @@ fabric.properties
 
 # python
 *.pyc
+__pycache__
+/resource/geometry/usdAnim/
