@@ -56,6 +56,9 @@ void GLWidget::paintGL() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+    parser->updateVertex();
+
+    //FIXME draw first frame
     model.setToIdentity();
     parser->drawGeometry(
             SHADER(0),
@@ -67,7 +70,7 @@ void GLWidget::paintGL() {
     lastDrew = current;
     drewNumber+=1;
 
-    parser->updateVertex();
+    parser->currentTimeCode = UsdTimeCode(parser->currentTimeCode.GetValue() + 1.0);
 }
 
 void GLWidget::resizeGL(int width, int height) {
@@ -90,7 +93,7 @@ void GLWidget::initShaders() {
 }
 
 void GLWidget::initGeometry() {
-    QString usdFilePath = QString("src/resource/geometry/usdAnim/rubbertoy2.usd");
+    QString usdFilePath = QString("src/resource/geometry/usdAnim/school_bus_sub_test.usd");
     parseUSDFile(usdFilePath);
 }
 

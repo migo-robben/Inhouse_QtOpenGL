@@ -630,9 +630,9 @@ bool usdParser::simpleComputeTriangleIndices(VtArray<int> &faceVertexCounts, VtA
 
 void usdParser::updateVertex() {
     qDebug() << "updating - CTimeCode: " << currentTimeCode.GetValue();
-    currentTimeCode = UsdTimeCode(currentTimeCode.GetValue() + 1.0);
+//    currentTimeCode = UsdTimeCode(currentTimeCode.GetValue() + 1.0);
 
-    if(currentTimeCode.GetValue() < stage->GetEndTimeCode()){
+    if(currentTimeCode.GetValue() <= stage->GetEndTimeCode()){
         getDataBySpecifyFrame_TBB(currentTimeCode);
     }else{
         currentTimeCode = animStartFrame;
