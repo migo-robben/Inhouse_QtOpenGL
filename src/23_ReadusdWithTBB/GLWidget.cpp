@@ -56,8 +56,6 @@ void GLWidget::paintGL() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    parser->updateVertex();
-
     model.setToIdentity();
     parser->drawGeometry(
             SHADER(0),
@@ -68,6 +66,8 @@ void GLWidget::paintGL() {
     qDebug() << "painting - drewNumber " << drewNumber << " fps/s " << 1000.0f/(current - lastDrew) << "frame: " <<parser->currentTimeCode.GetValue();
     lastDrew = current;
     drewNumber+=1;
+
+    parser->updateVertex();
 }
 
 void GLWidget::resizeGL(int width, int height) {
@@ -102,14 +102,14 @@ void GLWidget::parseUSDFile(QString &usdFilePath) {
 //    parser->getDataBySpecifyFrame_default(UsdTimeCode(currentFrame));
 
     // TBB method
-    parser->getDataBySpecifyFrame_TBB(UsdTimeCode(currentFrame));
-    parser->initGeometrySufficient();
-    parser->setupAttributePointer(SHADER(0));
-
-    // Read all
-//    parser->getDataByAll();
+//    parser->getDataBySpecifyFrame_TBB(UsdTimeCode(currentFrame));
 //    parser->initGeometrySufficient();
 //    parser->setupAttributePointer(SHADER(0));
+
+    // Read all
+    parser->getDataByAll();
+    parser->initGeometrySufficient();
+    parser->setupAttributePointer(SHADER(0));
     qDebug() << "parseUSDFile finished";
 }
 
