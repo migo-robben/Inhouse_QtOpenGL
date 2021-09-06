@@ -18,10 +18,10 @@ GLWidget::GLWidget(QWidget *parent)
     QVector3D cameraPos(0.0, 0.0, 5);
     camera = new Camera(cameraPos);
 
-//    QTimer *timer = new QTimer(this);
-//    connect(timer, SIGNAL(timeout()), this, SLOT(update()));
-//    timer->start(5);
-//    drewTimer.start();
+    QTimer *timer = new QTimer(this);
+    connect(timer, SIGNAL(timeout()), this, SLOT(update()));
+    timer->start(5);
+    drewTimer.start();
 }
 
 GLWidget::~GLWidget() {
@@ -93,7 +93,7 @@ void GLWidget::initShaders() {
 }
 
 void GLWidget::initGeometry() {
-    QString usdFilePath = QString("src/resource/geometry/usdAnim/school_bus_sub_low.usd");
+    QString usdFilePath = QString("resource/geometry/usdAnim/rubbertoy2.usd");
     parseUSDFile(usdFilePath);
 }
 

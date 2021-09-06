@@ -40,7 +40,7 @@ void usdParser::getUVToken(UsdPrim &prim, TfToken &tf_uv, bool &uvs) {
 }
 /*
 void usdParser::getDataBySpecifyFrame_default(UsdTimeCode timeCode) {
-    spdlog::info("\n\tGet data by specify frame: {}", timeCode.GetValue());
+    spdlog::info("\tGet data by specify frame: {}", timeCode.GetValue());
 
     currenTimeCode = timeCode;
 
@@ -224,7 +224,7 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
         return;
     }
 
-    spdlog::info("\n\tGet data by specify frame: {}", timeCode.GetValue());
+    spdlog::info("\tGet data by specify frame: {}", timeCode.GetValue());
 
     myTimer m_timer;
     m_timer.setStartPoint("TraverseAll");
@@ -640,24 +640,89 @@ void usdParser::updateVertex() {
     }
 
     myTimer m_timer;
-    m_timer.setStartPoint("VboWrite");
+    m_timer.setStartPoint(QString(QString("VboWrite ")+QString::number(currentTimeCode.GetValue())).toStdString());
     auto& vertex_data = geometry_data[currentTimeCode.GetValue()];
 
-    vbos[0].bind();
-    vbos[0].write(0, vertex_data.vt_gl_position.data(), vertex_data.vt_gl_position.size()* sizeof(GfVec3f));
-    vbos[0].release();
+    if(0){
+        vbos[0].bind();
+        vbos[0].write(0, vertex_data.vt_gl_position.data(), vertex_data.vt_gl_position.size()* sizeof(GfVec3f));
+        vbos[0].release();
 
-    vbos[1].bind();
-    vbos[1].write(0, vertex_data.vt_gl_texCoord.data(), vertex_data.vt_gl_texCoord.size()* sizeof(GfVec2f));
-    vbos[1].release();
+        vbos[1].bind();
+        vbos[1].write(0, vertex_data.vt_gl_texCoord.data(), vertex_data.vt_gl_texCoord.size()* sizeof(GfVec2f));
+        vbos[1].release();
 
-    vbos[2].bind();
-    vbos[2].write(0, vertex_data.vt_gl_normal.data(), vertex_data.vt_gl_normal.size()* sizeof(GfVec3f));
-    vbos[2].release();
+        vbos[2].bind();
+        vbos[2].write(0, vertex_data.vt_gl_normal.data(), vertex_data.vt_gl_normal.size()* sizeof(GfVec3f));
+        vbos[2].release();
 
-    ebo.bind();
-    ebo.write(0, vertex_data.indices.data(), vertex_data.indices.size()*sizeof(GLuint));
-    ebo.release();
+        ebo.bind();
+        ebo.write(0, vertex_data.indices.data(), vertex_data.indices.size()*sizeof(GLuint));
+        ebo.release();
+    }
+
+//    vbos[0].bind();
+//    GfVec3f* vbo0 = reinterpret_cast<GfVec3f*>(vbos[0].mapRange(0, vertex_data.vt_gl_position.size()* sizeof(GfVec3f), QOpenGLBuffer::RangeWrite));
+//    std::copy(vertex_data.vt_gl_position.begin(), vertex_data.vt_gl_position.end(), vbo0);
+//    vbos[0].release();
+
+    if(0){
+        vbos[0].bind();
+        GfVec3f* vbo0 = reinterpret_cast<GfVec3f*>(glMapBufferRange(GL_ARRAY_BUFFER, 0, vertex_data.vt_gl_position.size()* sizeof(GfVec3f),
+                                                                    GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT));
+        std::copy(vertex_data.vt_gl_position.begin(), vertex_data.vt_gl_position.end(), vbo0);
+        vbos[0].unmap();
+        vbos[0].release();
+
+        vbos[1].bind();
+        GfVec2f* vbo1 = reinterpret_cast<GfVec2f*>(glMapBufferRange(GL_ARRAY_BUFFER, 0, vertex_data.vt_gl_texCoord.size()* sizeof(GfVec2f),
+                                                                    GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT));
+        std::copy(vertex_data.vt_gl_texCoord.begin(), vertex_data.vt_gl_texCoord.end(), vbo1);
+        vbos[1].unmap();
+        vbos[1].release();
+
+        vbos[2].bind();
+        GfVec3f* vbo2 = reinterpret_cast<GfVec3f*>(glMapBufferRange(GL_ARRAY_BUFFER, 0, vertex_data.vt_gl_normal.size()* sizeof(GfVec3f),
+                                                                    GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT));
+        std::copy(vertex_data.vt_gl_normal.begin(), vertex_data.vt_gl_normal.end(), vbo2);
+        vbos[2].unmap();
+        vbos[2].release();
+
+        ebo.bind();
+        void* ebo0 = ebo.mapRange(0, vertex_data.indices.size()* sizeof(GLuint), QOpenGLBuffer::RangeWrite);
+        memcpy(ebo0, vertex_data.indices.data(), vertex_data.indices.size()* sizeof(GLuint));
+        ebo.unmap();
+        ebo.release();
+    }
+
+    if(1){
+        vbos[0].bind();
+        void* vbo0 = glMapBufferRange(GL_ARRAY_BUFFER, 0, vertex_data.vt_gl_position.size()* sizeof(GfVec3f),
+                                                                    GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+        memcpy(vbo0, vertex_data.vt_gl_position.data(), vertex_data.vt_gl_position.size()* sizeof(GfVec3f));
+        vbos[0].unmap();
+        vbos[0].release();
+
+        vbos[1].bind();
+        void* vbo1 = glMapBufferRange(GL_ARRAY_BUFFER, 0, vertex_data.vt_gl_texCoord.size()* sizeof(GfVec2f),
+                                                                    GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+        memcpy(vbo1, vertex_data.vt_gl_texCoord.data(), vertex_data.vt_gl_texCoord.size()* sizeof(GfVec2f));
+        vbos[1].unmap();
+        vbos[1].release();
+
+        vbos[2].bind();
+        void* vbo2 = glMapBufferRange(GL_ARRAY_BUFFER, 0, vertex_data.vt_gl_normal.size()* sizeof(GfVec3f),
+                                                                    GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+        memcpy(vbo2, vertex_data.vt_gl_normal.data(), vertex_data.vt_gl_normal.size()* sizeof(GfVec3f));
+        vbos[2].unmap();
+        vbos[2].release();
+
+        ebo.bind();
+        void* ebo0 = ebo.mapRange(0, vertex_data.indices.size()* sizeof(GLuint), QOpenGLBuffer::RangeWrite);
+        memcpy(ebo0, vertex_data.indices.data(), vertex_data.indices.size()* sizeof(GLuint));
+        ebo.unmap();
+        ebo.release();
+    }
 
     m_timer.setEndPoint();
     lastDrewTimeCode = currentTimeCode;
