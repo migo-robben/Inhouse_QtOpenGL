@@ -27,6 +27,7 @@
 #include <QVector2D>
 #include <QVector3D>
 
+#include <QOpenGLWidget>
 #include <QOpenGLBuffer>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLFunctions_4_5_Core>

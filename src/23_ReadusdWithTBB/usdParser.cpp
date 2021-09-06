@@ -642,7 +642,10 @@ void usdParser::updateVertex() {
         return;
     }
 
+    myTimer m_timer;
+    m_timer.setStartPoint();
     auto& vertex_data = geometry_data[currentTimeCode.GetValue()];
+
     vbos[0].bind();
     vbos[0].write(0, vertex_data.vt_gl_position.data(), vertex_data.vt_gl_position.size()* sizeof(GfVec3f));
     vbos[0].release();
@@ -658,6 +661,9 @@ void usdParser::updateVertex() {
     ebo.bind();
     ebo.write(0, vertex_data.indices.data(), vertex_data.indices.size()*sizeof(GLuint));
     ebo.release();
+
+    m_timer.setEndPoint();
+    m_timer.printDuration("VboWrite");
 
     lastDrewTimeCode = currentTimeCode;
 }
@@ -680,7 +686,5 @@ void usdParser::getDataByAll() {
     {
         getDataBySpecifyFrame_TBB(UsdTimeCode(step));
     });
-
-    initGeometrySufficient();
 }
 

@@ -90,25 +90,26 @@ void GLWidget::initShaders() {
 }
 
 void GLWidget::initGeometry() {
-    QString usdFilePath = QString("src/resource/geometry/usdAnim/rubbertoy1.usd");
+    QString usdFilePath = QString("src/resource/geometry/usdAnim/rubbertoy2.usd");
     parseUSDFile(usdFilePath);
 }
 
 void GLWidget::parseUSDFile(QString &usdFilePath) {
     parser = std::make_shared<usdParser>(usdFilePath);
-
     double currentFrame = parser->animStartFrame;
 
     // Default method
 //    parser->getDataBySpecifyFrame_default(UsdTimeCode(currentFrame));
 
     // TBB method
-//    parser->getDataBySpecifyFrame_TBB(UsdTimeCode(currentFrame));
-//    parser->setupAttributePointer(SHADER(0));
+    parser->getDataBySpecifyFrame_TBB(UsdTimeCode(currentFrame));
+    parser->initGeometrySufficient();
+    parser->setupAttributePointer(SHADER(0));
 
     // Read all
-    parser->getDataByAll();
-    parser->setupAttributePointer(SHADER(0));
+//    parser->getDataByAll();
+//    parser->initGeometrySufficient();
+//    parser->setupAttributePointer(SHADER(0));
     qDebug() << "parseUSDFile finished";
 }
 
