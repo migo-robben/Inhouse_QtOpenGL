@@ -227,7 +227,7 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
     spdlog::info("\n\tGet data by specify frame: {}", timeCode.GetValue());
 
     myTimer m_timer;
-    m_timer.setStartPoint();
+    m_timer.setStartPoint("TraverseAll");
 
     // ----- Mesh dictionary ----- //
     // { "mesh1":{0, 0, 4, 2}, "mesh2":{1, 4, 28, 14}, ... }
@@ -296,7 +296,7 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
                 }
 
                 myTimer subtimer;
-                subtimer.setStartPoint();
+                subtimer.setStartPoint("Deal with Properties");
 
                 VtArray<int> vt_faceVertexCounts;
                 UsdAttribute attr_faceVertexCounts = prim.GetAttribute(TfToken("faceVertexCounts"));
@@ -434,10 +434,8 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
                 mtx.unlock();
 
                 subtimer.setEndPoint();
-                QString info_before = QString("<") + QString(prim.GetName().GetString().c_str()) + QString("> -----> Before Compute TriangleIndices");
-                subtimer.printDuration(info_before.toStdString().c_str());
 
-                subtimer.setStartPoint();
+                subtimer.setStartPoint("Compute TriangleIndices");
                 if (!m_has_triangulated) {
                     // ----- Simple Triangulation ----- //
                     simpleComputeTriangleIndices(vt_faceVertexCounts, vt_faceVertexIndices_reorder, UsdGeomTokens->rightHanded, vt_triFaceVertexIndices);
@@ -451,10 +449,10 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
                         vertex_data.indices[offsetPtr + i * 3 + 2] = vt_triFaceVertexIndices[i][2] + start_pointer;
                     }
                 }
-                subtimer.setEndPoint();
 
-                QString info_triangulation = QString("<") + QString(prim.GetName().GetString().c_str()) + QString("> Compute TriangleIndices ");
-                subtimer.printDuration(info_triangulation.toStdString().c_str());
+                QString info_triangulation = QString("Compute TriangleIndices <") + QString(prim.GetName().GetString().c_str()) + QString(">");
+                subtimer.setEndPoint(info_triangulation.toStdString());
+
             });
 
     vertex_data.vt_gl_position.resize(actually_points);
@@ -466,7 +464,6 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
     // m_has_triangulated = true;
 
     m_timer.setEndPoint();
-    m_timer.printDuration("TraverseAll");
 
 }
 
@@ -480,10 +477,10 @@ void usdParser::initGeometrySufficient() {
              << vertex_data.vt_gl_normal.size()
              << vertex_data.indices.size();
 
-    int allocateConstant1 = 20000000;
-    int allocateConstant2 = 20000000;
-    int allocateConstant3 = 20000000;
-    int allocateConstant4 = 300000000;
+    int allocateConstant1 = 175877952;
+    int allocateConstant2 = 175877952;
+    int allocateConstant3 = 175877952;
+    int allocateConstant4 = 263816928;
 
     vbos[0].bind();
     vbos[0].setUsagePattern(QOpenGLBuffer::StaticDraw);
@@ -643,7 +640,7 @@ void usdParser::updateVertex() {
     }
 
     myTimer m_timer;
-    m_timer.setStartPoint();
+    m_timer.setStartPoint("VboWrite");
     auto& vertex_data = geometry_data[currentTimeCode.GetValue()];
 
     vbos[0].bind();
@@ -663,8 +660,6 @@ void usdParser::updateVertex() {
     ebo.release();
 
     m_timer.setEndPoint();
-    m_timer.printDuration("VboWrite");
-
     lastDrewTimeCode = currentTimeCode;
 }
 
