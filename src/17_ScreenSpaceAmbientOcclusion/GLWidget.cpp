@@ -351,6 +351,7 @@ void GLWidget::initGeometry() {
 //    customGeometry = new CustomGeometry(QString("src/resource/viking_room.obj"));
     customGeometry = new CustomGeometry(QString("src/resource/backpack.obj"));
     customGeometry->initGeometry();
+    customGeometry->initAllocate();
     customGeometry->setupAttributePointer(SHADER(0));
     customGeometry->setupAttributePointer(SHADER(1));
 
@@ -567,7 +568,7 @@ void GLWidget::cleanup() {
     ssaoColorBufferBlur = nullptr;
     noiseTexture = nullptr;
 
-    gBufferTextures.clear();
+    //gBufferTextures.clear();  // got debug error
 
     doneCurrent();
 }
