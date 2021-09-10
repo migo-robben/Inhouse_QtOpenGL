@@ -69,13 +69,13 @@ void FloorGeometry::setupAttributePointer(QOpenGLShaderProgram *program) {
 
 QVector<VertexData> FloorGeometry::getVerticesData() {
     vertices = {
-            {QVector3D(5.0f, -0.5f,  5.0f),  QVector2D(1.0f, 0.0f), QVector3D(0.0f, 1.0f, 0.0f)},
-            {QVector3D(-5.0f, -0.5f,  5.0f),  QVector2D(0.0f, 0.0f), QVector3D(0.0f, 1.0f, 0.0f)},
-            {QVector3D(-5.0f, -0.5f, -5.0f),  QVector2D(0.0f, 1.0f), QVector3D(0.0f, 1.0f, 0.0f)},
+            {QVector3D(5.0f, 0.0f,  5.0f),  QVector2D(1.0f, 0.0f), QVector3D(0.0f, 1.0f, 0.0f)},
+            {QVector3D(-5.0f, 0.0f,  5.0f),  QVector2D(0.0f, 0.0f), QVector3D(0.0f, 1.0f, 0.0f)},
+            {QVector3D(-5.0f, 0.0f, -5.0f),  QVector2D(0.0f, 1.0f), QVector3D(0.0f, 1.0f, 0.0f)},
 
-            {QVector3D(5.0f, -0.5f,  5.0f),  QVector2D(1.0f, 0.0f), QVector3D(0.0f, 1.0f, 0.0f)},
-            {QVector3D(-5.0f, -0.5f, -5.0f),  QVector2D(0.0f, 1.0f), QVector3D(0.0f, 1.0f, 0.0f)},
-            {QVector3D(5.0f, -0.5f, -5.0f),  QVector2D(1.0f, 1.0f), QVector3D(0.0f, 1.0f, 0.0f)}
+            {QVector3D(5.0f, 0.0f,  5.0f),  QVector2D(1.0f, 0.0f), QVector3D(0.0f, 1.0f, 0.0f)},
+            {QVector3D(-5.0f, 0.0f, -5.0f),  QVector2D(0.0f, 1.0f), QVector3D(0.0f, 1.0f, 0.0f)},
+            {QVector3D(5.0f, 0.0f, -5.0f),  QVector2D(1.0f, 1.0f), QVector3D(0.0f, 1.0f, 0.0f)}
     };
 
     return vertices;
