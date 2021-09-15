@@ -55,8 +55,9 @@ public:
     explicit usdParser(QString &path);
 
     void getUVToken(UsdPrim &prim, TfToken &tf_uv, bool &uvs);
-    //void getDataBySpecifyFrame_default(UsdTimeCode timeCode);
+    void getDataBySpecifyFrame_default(UsdTimeCode timeCode);
     void getDataBySpecifyFrame_TBB(UsdTimeCode timeCode);
+    void getDataBySpecifyFrame_TBB_Optimize_Triangulation(UsdTimeCode timeCode);
     void getDataByAll();
     void setupAttributePointer(QOpenGLShaderProgram *program);
     void updateVertex();
@@ -68,6 +69,7 @@ public:
     bool fanTriangulate(GfVec3i &dst, VtArray<int> const &src, int offset, int index, int size, bool flip);
     bool simpleComputeTriangleIndices(VtArray<int> &faceVertexCounts, VtArray<int> &faceVertexIndices,
                                       const TfToken& orientation, VtVec3iArray &tri_indices);
+    void computeTriangleIndices(VtArray<int> &face_vertex_counts, VertexData &vertex_data, int ele_start_index, int face_start_index, const TfToken& orientation);
 
 private:
     UsdStageRefPtr stage;

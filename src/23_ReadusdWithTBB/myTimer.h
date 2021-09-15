@@ -33,7 +33,7 @@ public:
         time_point<system_clock> start_point = system_clock::now();
         PointInfo point_info(prefix, start_point);
         _point_stack.push(point_info);
-        spdlog::info("\tStart {}", prefix);
+        spdlog::info("\tStart - {}", prefix);
     }
 
     void setEndPoint() {
@@ -53,7 +53,7 @@ public:
 
         if (_point_stack.empty()) {
             if (is_print_str) {
-                spdlog::info("\tEnd {}", prefix);
+                spdlog::info("\tEnd - {}", prefix);
             }
         }
         else {
@@ -66,7 +66,7 @@ public:
 
             if (is_print_str) {
                 point_info._prefix;
-                spdlog::info("\tEnd {} time: {} ms", prefix, getDuration(point_info._time_point, end_point));
+                spdlog::info("\tEnd - {} time: {} ms", prefix, getDuration(point_info._time_point, end_point));
             }
         }
     }

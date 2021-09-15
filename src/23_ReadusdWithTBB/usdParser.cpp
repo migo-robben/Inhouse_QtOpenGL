@@ -38,34 +38,33 @@ void usdParser::getUVToken(UsdPrim &prim, TfToken &tf_uv, bool &uvs) {
         return;
     }
 }
-/*
+
 void usdParser::getDataBySpecifyFrame_default(UsdTimeCode timeCode) {
     spdlog::info("\tGet data by specify frame: {}", timeCode.GetValue());
 
-    currenTimeCode = timeCode;
+    currentTimeCode = timeCode;
 
     myTimer m_timer;
-    m_timer.setStartPoint();
-    if (!m_has_triangulated)
-        m_indicesCount = 0;
+    m_timer.setStartPoint("TraverseAll");
+
+    int __indices_count = 0;
+    int __index_increase = 0;
+
+    geometry_data[timeCode.GetValue()] = VertexData();
+    VertexData &vertex_data = geometry_data[timeCode.GetValue()];
 
     for (UsdPrim prim: stage->TraverseAll()) {
         if (prim.GetTypeName() == "Mesh") {
             spdlog::info("\n\t Processing mesh: {}", prim.GetName().GetString());
 
             // Mesh Attribute Token
-            TfToken tf_faceVertexCounts("faceVertexCounts");
-            TfToken tf_faceVertexIndices("faceVertexIndices");
-            TfToken tf_normals("normals");
-            TfToken tf_points("points");
-
             // Get UV Attribute Token
             bool has_uv;
             TfToken tf_uv;
             getUVToken(prim, tf_uv, has_uv);
 
             // Check Normal Attribute
-            bool has_normal = prim.HasProperty(tf_normals);
+            bool has_normal = prim.HasProperty(UsdGeomTokens->normals);
 
             // USD Attributes
             VtArray<int> vt_faceVertexCounts, vt_faceVertexIndices;
@@ -84,10 +83,10 @@ void usdParser::getDataBySpecifyFrame_default(UsdTimeCode timeCode) {
             // Get Attribute Values
             UsdGeomMesh processGeom(prim);
             UsdAttribute attr_geoHole = processGeom.GetHoleIndicesAttr();
-            UsdAttribute attr_faceVertexCounts = prim.GetAttribute(tf_faceVertexCounts);
-            UsdAttribute attr_faceVertexIndices = prim.GetAttribute(tf_faceVertexIndices);
-            UsdAttribute attr_normals = prim.GetAttribute(tf_normals);
-            UsdAttribute attr_points = prim.GetAttribute(tf_points);
+            UsdAttribute attr_faceVertexCounts = prim.GetAttribute(UsdGeomTokens->faceVertexCounts);
+            UsdAttribute attr_faceVertexIndices = prim.GetAttribute(UsdGeomTokens->faceVertexIndices);
+            UsdAttribute attr_normals = prim.GetAttribute(UsdGeomTokens->normals);
+            UsdAttribute attr_points = prim.GetAttribute(UsdGeomTokens->points);
             UsdAttribute attr_uv = prim.GetAttribute(tf_uv);
 
             attr_faceVertexCounts.Get(&vt_faceVertexCounts, timeCode);
@@ -122,7 +121,7 @@ void usdParser::getDataBySpecifyFrame_default(UsdTimeCode timeCode) {
 
                 // ----- Point ----- //
                 GfVec3f vt_point = ModelTransform.Transform(vt_points[faceVertexIndex]);
-                vt_gl_position.emplace_back(vt_point);
+                vertex_data.vt_gl_position.emplace_back(vt_point);
 
                 // ----- Normal ----- //
                 if (has_normal) {
@@ -135,13 +134,13 @@ void usdParser::getDataBySpecifyFrame_default(UsdTimeCode timeCode) {
 
                     // Set Normal
                     if (vt_normals.empty()) {
-                        vt_gl_normal.emplace_back(GfVec3f(0.0, 1.0, 0.0));
+                        vertex_data.vt_gl_normal.emplace_back(GfVec3f(0.0, 1.0, 0.0));
                     } else {
                         GfVec3f vt_normal = vt_normals[normal_index];
-                        vt_gl_normal.emplace_back(vt_normal);
+                        vertex_data.vt_gl_normal.emplace_back(vt_normal);
                     }
                 } else {
-                    vt_gl_normal.emplace_back(GfVec3f(0.0, 1.0, 0.0));
+                    vertex_data.vt_gl_normal.emplace_back(GfVec3f(0.0, 1.0, 0.0));
                 }
 
                 // ----- UV ----- //
@@ -163,13 +162,13 @@ void usdParser::getDataBySpecifyFrame_default(UsdTimeCode timeCode) {
 
                     // Set UV
                     if (vt_uvs.empty()) {
-                        vt_gl_texCoord.emplace_back(GfVec2f(0.0, 0.0));
+                        vertex_data.vt_gl_texCoord.emplace_back(GfVec2f(0.0, 0.0));
                     } else {
                         GfVec2f vt_uv = vt_uvs[uv_index];
-                        vt_gl_texCoord.emplace_back(vt_uv);
+                        vertex_data.vt_gl_texCoord.emplace_back(vt_uv);
                     }
                 } else {
-                    vt_gl_texCoord.emplace_back(GfVec2f(0.0, 0.0));
+                    vertex_data.vt_gl_texCoord.emplace_back(GfVec2f(0.0, 0.0));
                 }
 
                 vt_faceVertexIndices_reorder[faceVertexIndex_index] = faceVertexIndex_index;
@@ -177,42 +176,42 @@ void usdParser::getDataBySpecifyFrame_default(UsdTimeCode timeCode) {
 
             // Compute triangulation
             myTimer subtimer;
-            subtimer.setStartPoint();
-            if (!m_has_triangulated) {
-                // ----- Triangulation ----- //
-                HdMeshTopology topology(UsdGeomTokens->none, UsdGeomTokens->rightHanded,
-                                        vt_faceVertexCounts, vt_faceVertexIndices_reorder, vt_holeIndices);
-                HdMeshUtil mesh_util(&topology, prim.GetPath());
-                mesh_util.ComputeTriangleIndices(&vt_triFaceVertexIndices, &vt_primitiveParam, &vt_triEdgeIndices);
+            subtimer.setStartPoint("Compute TriangleIndices");
 
-                // vt_triFaceVertexIndices: [(0, 1, 3), (1, 2, 3), (2, 3, 1), ...]
-                indices.resize(m_indicesCount + vt_triFaceVertexIndices.size() * 3);
-                for (int i = 0; i < vt_triFaceVertexIndices.size(); i++) {
-                    indices[i * 3 + m_indicesCount + 0] = m_indexIncrease + vt_triFaceVertexIndices[i][0];
-                    indices[i * 3 + m_indicesCount + 1] = m_indexIncrease + vt_triFaceVertexIndices[i][1];
-                    indices[i * 3 + m_indicesCount + 2] = m_indexIncrease + vt_triFaceVertexIndices[i][2];
-                }
-                m_indicesCount += vt_triFaceVertexIndices.size() * 3;
+            // ----- Triangulation ----- //
+            HdMeshTopology topology(UsdGeomTokens->none, UsdGeomTokens->rightHanded,
+                                    vt_faceVertexCounts, vt_faceVertexIndices_reorder, vt_holeIndices);
+            HdMeshUtil mesh_util(&topology, prim.GetPath());
+            mesh_util.ComputeTriangleIndices(&vt_triFaceVertexIndices, &vt_primitiveParam, &vt_triEdgeIndices);
+
+            // vt_triFaceVertexIndices: [(0, 1, 3), (1, 2, 3), (2, 3, 1), ...]
+            vertex_data.indices.resize(__indices_count + vt_triFaceVertexIndices.size() * 3);
+            for (int i = 0; i < vt_triFaceVertexIndices.size(); i++) {
+                vertex_data.indices[i * 3 + __indices_count + 0] = __index_increase + vt_triFaceVertexIndices[i][0];
+                vertex_data.indices[i * 3 + __indices_count + 1] = __index_increase + vt_triFaceVertexIndices[i][1];
+                vertex_data.indices[i * 3 + __indices_count + 2] = __index_increase + vt_triFaceVertexIndices[i][2];
             }
-            subtimer.setEndPoint();
-            QString info = QString("Compute TriangleIndices <") + QString(prim.GetName().GetString().c_str()) + QString(">");
-            subtimer.printDuration(info.toStdString().c_str());
+            __indices_count += vt_triFaceVertexIndices.size() * 3;
+
+//            computeTriangleIndices(vt_faceVertexCounts, vertex_data, start_tri_pointer * 3, UsdGeomTokens->rightHanded);
+
+            QString info_triangulation = QString("Compute TriangleIndices <") + QString(prim.GetName().GetString().c_str()) + QString(">");
+            subtimer.setEndPoint(info_triangulation.toStdString());
 
             // record vertex data amount for each Prim
-            m_indexIncrease += vt_faceVertexIndices_reorder.size();
+            __index_increase += vt_faceVertexIndices.size();
         }
+
     }
 
-    m_has_triangulated = true;
-    m_timer.setEndPoint();
-    m_timer.printDuration("TraverseAll");
 
-    m_timer.setStartPoint();
-    initGeometry();
     m_timer.setEndPoint();
-    m_timer.printDuration("InitGeometry buffer allocate");
+
+    m_timer.setStartPoint("InitGeometry buffer allocate");
+    initGeometry();
 }
-*/
+
+
 void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
     auto search = geometry_data.find(timeCode.GetValue());
     if(search != geometry_data.end()){
@@ -239,7 +238,7 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
     for (UsdPrim prim: stage->TraverseAll()) {
         if (prim.GetTypeName() == "Mesh") {
             // Get Visibility
-            UsdAttribute attr_visibility = prim.GetAttribute(TfToken("visibility"));
+            UsdAttribute attr_visibility = prim.GetAttribute(UsdGeomTokens->visibility);
             TfToken visibility;
             attr_visibility.Get(&visibility, timeCode);
             if (visibility == UsdGeomTokens->invisible) {
@@ -249,8 +248,8 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
             std::vector<int> currentProcessMeshData;
             VtArray<int> vt_faceVertexCounts, vt_faceVertexIndices;
 
-            UsdAttribute attr_faceVertexCounts = prim.GetAttribute(TfToken("faceVertexCounts"));
-            UsdAttribute attr_faceVertexIndices = prim.GetAttribute(TfToken("faceVertexIndices"));
+            UsdAttribute attr_faceVertexCounts = prim.GetAttribute(UsdGeomTokens->faceVertexCounts);
+            UsdAttribute attr_faceVertexIndices = prim.GetAttribute(UsdGeomTokens->faceVertexIndices);
 
             attr_faceVertexCounts.Get(&vt_faceVertexCounts, timeCode);
             attr_faceVertexIndices.Get(&vt_faceVertexIndices, timeCode);
@@ -287,7 +286,7 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
                 if (prim.GetTypeName() != "Mesh") {
                     return;
                 } else {
-                    UsdAttribute attr_visibility = prim.GetAttribute(TfToken("visibility"));
+                    UsdAttribute attr_visibility = prim.GetAttribute(UsdGeomTokens->visibility);
                     TfToken visibility;
                     attr_visibility.Get(&visibility, timeCode);
                     if (visibility == UsdGeomTokens->invisible) {
@@ -299,7 +298,7 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
                 subtimer.setStartPoint("Deal with Properties");
 
                 VtArray<int> vt_faceVertexCounts;
-                UsdAttribute attr_faceVertexCounts = prim.GetAttribute(TfToken("faceVertexCounts"));
+                UsdAttribute attr_faceVertexCounts = prim.GetAttribute(UsdGeomTokens->faceVertexCounts);
                 attr_faceVertexCounts.Get(&vt_faceVertexCounts, timeCode);
 
                 std::vector<int> mesh_data = meshDict[prim.GetName().GetString()];
@@ -308,18 +307,13 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
                 int end_pointer = mesh_data[2]; // except this value, end_pointer - 1;
                 int number_of_triangulation = mesh_data[3];
 
-                // Mesh Attribute Token
-                TfToken tf_faceVertexIndices("faceVertexIndices");
-                TfToken tf_normals("normals");
-                TfToken tf_points("points");
-
                 // Get UV Attribute Token
                 bool has_uv;
                 TfToken tf_uv;
                 this->getUVToken(prim, tf_uv, has_uv);
 
                 // Check Normal Attribute
-                bool has_normal = prim.HasProperty(tf_normals);
+                bool has_normal = prim.HasProperty(UsdGeomTokens->normals);
 
                 // USD Attributes
                 VtArray<int> vt_faceVertexIndices;
@@ -329,6 +323,7 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
                 TfToken tf_normal_interpolation = TfToken("constant");
                 TfToken tf_uv_interpolation = TfToken("constant");
                 GfMatrix4d ModelTransform{};
+                TfToken vt_orientation;
 
                 VtVec3iArray vt_triFaceVertexIndices;
                 VtIntArray vt_primitiveParam;
@@ -338,16 +333,18 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
                 // Get Attribute Values
                 UsdGeomMesh processGeom(prim);
                 UsdAttribute attr_geoHole = processGeom.GetHoleIndicesAttr();
-                UsdAttribute attr_faceVertexIndices = prim.GetAttribute(tf_faceVertexIndices);
-                UsdAttribute attr_normals = prim.GetAttribute(tf_normals);
-                UsdAttribute attr_points = prim.GetAttribute(tf_points);
+                UsdAttribute attr_faceVertexIndices = prim.GetAttribute(UsdGeomTokens->faceVertexIndices);
+                UsdAttribute attr_normals = prim.GetAttribute(UsdGeomTokens->normals);
+                UsdAttribute attr_points = prim.GetAttribute(UsdGeomTokens->points);
                 UsdAttribute attr_uv = prim.GetAttribute(tf_uv);
+                UsdAttribute attr_orientation = prim.GetAttribute(UsdGeomTokens->orientation);
 
                 attr_faceVertexIndices.Get(&vt_faceVertexIndices, timeCode);
                 attr_normals.Get(&vt_normals, timeCode);
                 attr_points.Get(&vt_points, timeCode);
                 attr_uv.Get(&vt_uvs, timeCode);
                 attr_geoHole.Get(&vt_holeIndices, timeCode);
+                attr_orientation.Get(&vt_orientation, timeCode);
 
                 // Get normal and uv interpolation
                 if (has_normal) {
@@ -366,21 +363,29 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
 
                 // Define a new `faceVertexIndices` array for Triangulation
                 VtArray<int> vt_faceVertexIndices_reorder(vt_faceVertexIndices.size());
+                int faceVertexIndices = vt_faceVertexIndices.size();
+                int reorder_index = 0;
+                for (const auto index : vt_faceVertexIndices) {
+                    vt_faceVertexIndices_reorder[reorder_index] = reorder_index;
+                    reorder_index += 1;
+                }
 
-                tbb::parallel_for(0, int(vt_faceVertexIndices.size()), 1,
-                                  [this, &vt_faceVertexIndices, &ModelTransform, &start_pointer, &vt_faceVertexIndices_reorder,
-                                          vt_points, vt_normals, vt_uv_indices, vt_uvs, &has_normal, &tf_normal_interpolation, &has_uv, &tf_uv_interpolation, &vertex_data](int faceVertexIndex_index) {
+                tbb::parallel_for(0, faceVertexIndices, 1,
+                                  [this, &vt_faceVertexIndices, &ModelTransform, &start_pointer,
+                                          vt_points, vt_normals, vt_uv_indices, vt_uvs, &has_normal, &tf_normal_interpolation,
+                                          &has_uv, &tf_uv_interpolation, &vertex_data](int faceVertexIndex_index) {
 
                 // int[] faceVertexIndices = [0, 1, 4, 3, 1, 2, ...]
                 int faceVertexIndex = vt_faceVertexIndices[faceVertexIndex_index];
 
                 // ----- Point ----- //
                 GfVec3f vt_point = ModelTransform.Transform(vt_points[faceVertexIndex]);
+//                qDebug() << "test point";
                 vertex_data.vt_gl_position[faceVertexIndex_index + start_pointer] = vt_point;
 
                 // e.g.   int[] faceVertexIndices     = [2, 0, 1, 3, 5, 4, 2, 3]
                 //     -> int[] faceVertexIndices_new = [0, 1, 2, 3, 4, 5, 6, 7]
-                vt_faceVertexIndices_reorder[faceVertexIndex_index] = faceVertexIndex_index;
+//                vt_faceVertexIndices_reorder[faceVertexIndex_index] = faceVertexIndex_index;
 
                 // ----- Normal ----- //
                 if (has_normal) {
@@ -466,6 +471,273 @@ void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
     m_timer.setEndPoint();
 
 }
+
+void usdParser::getDataBySpecifyFrame_TBB_Optimize_Triangulation(UsdTimeCode timeCode) {
+    auto search = geometry_data.find(timeCode.GetValue());
+    if(search != geometry_data.end()){
+        //qDebug() << "this timeCode " << timeCode.GetValue() << " is already in the geometry_data";
+        return;
+    }
+    if(timeCode < stage->GetStartTimeCode() || timeCode > stage->GetEndTimeCode()){
+        //qDebug() << "this is not a valid timeCode " << timeCode.GetValue();
+        return;
+    }
+
+    spdlog::info("\tGet data by specify frame: {}", timeCode.GetValue());
+
+    myTimer m_timer;
+    m_timer.setStartPoint("TraverseAll");
+    m_timer.setStartPoint("TraverseFaceVertexCounts");
+
+    // ----- Mesh dictionary ----- //
+    // { "mesh1":{0, 0, 4, 2}, "mesh2":{1, 4, 28, 14}, ... }
+    // { "mesh_name": {mesh_index, indices_start, indices_end, the_number_of_triangles_accumulated_at_the_current_position}, ... }
+    std::map<std::string, std::vector<int>> meshDict;
+
+    // ----- Precalculate the number of triangulation and mesh index ----- //
+    int totalTriangulation = 0, meshIndex = 0, index_pointer = 0;
+    for (UsdPrim prim: stage->TraverseAll()) {
+        if (prim.GetTypeName() != "Mesh") { continue; }
+        // Get Visibility
+        UsdAttribute attr_visibility = prim.GetAttribute(UsdGeomTokens->visibility);
+        TfToken visibility;
+        attr_visibility.Get(&visibility, timeCode);
+
+        if (visibility == UsdGeomTokens->invisible) { continue; }
+
+        std::vector<int> currentProcessMeshData(5);
+        VtArray<int> vt_faceVertexCounts;
+
+        UsdAttribute attr_faceVertexCounts = prim.GetAttribute(UsdGeomTokens->faceVertexCounts);
+
+        attr_faceVertexCounts.Get(&vt_faceVertexCounts, timeCode);
+
+        currentProcessMeshData[0] = meshIndex;
+        currentProcessMeshData[1] = index_pointer; // represent start pointer
+        currentProcessMeshData[2] = totalTriangulation; // represent start pointer for triangle indices
+        for (int vt_faceVertexCount : vt_faceVertexCounts) {
+            totalTriangulation += vt_faceVertexCount - 2;
+            index_pointer += vt_faceVertexCount;
+        }
+        currentProcessMeshData[3] = index_pointer; // represent end pointer
+        currentProcessMeshData[4] = totalTriangulation;
+
+        meshDict[prim.GetPath().GetString()] = currentProcessMeshData;
+        meshIndex++;
+    }
+    m_timer.setEndPoint();
+
+    // ----- Preallocate memory ----- //
+    geometry_data[timeCode.GetValue()] = VertexData();
+    VertexData &vertex_data = geometry_data[timeCode.GetValue()];
+    vertex_data.indices.resize(totalTriangulation * 3); // 3 points per triangulation
+    vertex_data.vt_gl_position.resize(index_pointer);
+    vertex_data.vt_gl_texCoord.resize(index_pointer);
+    vertex_data.vt_gl_normal.resize(index_pointer);
+
+    // ----- Actually the number of points, uv, normal ----- //
+    int actually_points = 0, actually_uv = 0, actually_normal = 0;
+
+    // ----- Parallel traverse all prim ----- //
+    tbb::parallel_do(
+            stage->TraverseAll(),
+            [this, &timeCode, &actually_points, &meshDict, &vertex_data ](UsdPrim prim) {
+                if (prim.GetTypeName() != "Mesh") {
+                    return;
+                } else {
+                    UsdAttribute attr_visibility = prim.GetAttribute(UsdGeomTokens->visibility);
+                    TfToken visibility;
+                    attr_visibility.Get(&visibility, timeCode);
+                    if (visibility == UsdGeomTokens->invisible) {
+                        return;
+                    }
+                }
+
+                myTimer subtimer;
+                subtimer.setStartPoint("Deal with Properties");
+
+                VtArray<int> vt_faceVertexCounts;
+                UsdAttribute attr_faceVertexCounts = prim.GetAttribute(UsdGeomTokens->faceVertexCounts);
+                attr_faceVertexCounts.Get(&vt_faceVertexCounts, timeCode);
+
+                std::vector<int> mesh_data = meshDict[prim.GetPath().GetString()];
+                // Range: [ start_pointer, end_pointer - 1 ]
+                int mesh_index = mesh_data[0]; //
+                int start_pointer = mesh_data[1]; // faceVertexIndices start
+                int start_tri_pointer = mesh_data[2]; // triangle amount start index
+                int end_pointer = mesh_data[3]; // except this value, end_pointer - 1;
+                int number_of_triangulation = mesh_data[4]; // triangle amount
+
+                // Get UV Attribute Token
+                bool has_uv;
+                TfToken tf_uv;
+                this->getUVToken(prim, tf_uv, has_uv);
+
+                // Check Normal Attribute
+                bool has_normal = prim.HasProperty(UsdGeomTokens->normals);
+
+                // USD Attributes
+                VtArray<int> vt_faceVertexIndices;
+                VtArray<GfVec3f> vt_normals, vt_points;
+                VtArray<GfVec2f> vt_uvs;
+                VtArray<int> vt_uv_indices, vt_holeIndices;
+                TfToken tf_normal_interpolation = UsdGeomTokens->constant;
+                TfToken tf_uv_interpolation = UsdGeomTokens->constant;
+                GfMatrix4d ModelTransform{};
+                TfToken vt_orientation;
+
+                // Get Attribute Values
+                UsdGeomMesh processGeom(prim);
+                UsdAttribute attr_geoHole = processGeom.GetHoleIndicesAttr();
+                UsdAttribute attr_faceVertexIndices = prim.GetAttribute(UsdGeomTokens->faceVertexIndices);
+                UsdAttribute attr_normals = prim.GetAttribute(UsdGeomTokens->normals);
+                UsdAttribute attr_points = prim.GetAttribute(UsdGeomTokens->points);
+                UsdAttribute attr_uv = prim.GetAttribute(tf_uv);
+                UsdAttribute attr_orientation = prim.GetAttribute(UsdGeomTokens->orientation);
+
+                attr_faceVertexIndices.Get(&vt_faceVertexIndices, timeCode);
+                attr_normals.Get(&vt_normals, timeCode);
+                attr_points.Get(&vt_points, timeCode);
+                attr_uv.Get(&vt_uvs, timeCode);
+                attr_geoHole.Get(&vt_holeIndices, timeCode);
+                attr_orientation.Get(&vt_orientation, timeCode);
+
+                // Get normal and uv interpolation
+                if (has_normal) {
+                    UsdGeomPrimvar primvar_normal(attr_normals);
+                    tf_normal_interpolation = primvar_normal.GetInterpolation();
+                }
+
+                if (has_uv) {
+                    UsdGeomPrimvar primvars_uv(attr_uv);
+                    tf_uv_interpolation = primvars_uv.GetInterpolation();
+                    primvars_uv.GetIndices(&vt_uv_indices, timeCode);
+                }
+
+                UsdGeomXformable xformable(prim);
+                ModelTransform = xformable.ComputeLocalToWorldTransform(timeCode);
+
+                int faceVertexIndices = vt_faceVertexIndices.size();
+
+                tbb::parallel_for(0, faceVertexIndices, 1,
+                                  [this, &vt_faceVertexIndices, &ModelTransform, &start_pointer,
+                                          vt_points, vt_normals, vt_uv_indices, vt_uvs, &has_normal,
+                                          &tf_normal_interpolation, &has_uv, &tf_uv_interpolation,
+                                          &vertex_data](int faceVertexIndex_index) {
+
+                // int[] faceVertexIndices = [0, 1, 4, 3, 1, 2, ...]
+                int faceVertexIndex = vt_faceVertexIndices[faceVertexIndex_index];
+                spdlog::debug("debug");
+
+                // ----- Point ----- //
+                GfVec3f vt_point = ModelTransform.Transform(vt_points[faceVertexIndex]);
+                vertex_data.vt_gl_position[faceVertexIndex_index + start_pointer] = vt_point;
+
+
+                // ----- Normal ----- //
+                if (has_normal) {
+                    int normal_index = 0;
+                    if (tf_normal_interpolation == "vertex") {
+                        normal_index = faceVertexIndex;
+                    } else if (tf_normal_interpolation == "faceVarying") {
+                        normal_index = faceVertexIndex_index;
+                    }
+                    // Set Normal
+                    if (vt_normals.empty()) {
+                        vertex_data.vt_gl_normal[faceVertexIndex_index + start_pointer] = GfVec3f(0.0, 1.0, 0.0);
+                    } else {
+                        GfVec3f vt_normal = vt_normals[normal_index];
+                        vertex_data.vt_gl_normal[faceVertexIndex_index + start_pointer] = vt_normal;
+                    }
+                } else {
+                    vertex_data.vt_gl_normal[faceVertexIndex_index + start_pointer] = GfVec3f(0.0, 1.0, 0.0);
+                }
+
+                // ----- UV ----- //
+                if (has_uv) {
+                    int uv_index = 0;
+                    if (vt_uv_indices.empty()) {
+                        if (tf_uv_interpolation == "vertex") {
+                            uv_index = faceVertexIndex;
+                        } else if (tf_uv_interpolation == "faceVarying") {
+                            uv_index = faceVertexIndex_index;
+                        }
+                    } else {
+                        if (tf_uv_interpolation == "vertex") {
+                            uv_index = vt_uv_indices[faceVertexIndex];
+                        } else if (tf_uv_interpolation == "faceVarying") {
+                            uv_index = vt_uv_indices[faceVertexIndex_index];
+                        }
+                    }
+                    // Set UV
+                    if (vt_uvs.empty()) {
+                        vertex_data.vt_gl_texCoord[faceVertexIndex_index + start_pointer] = GfVec2f(0.0, 0.0);
+                    } else {
+                        GfVec2f vt_uv = vt_uvs[uv_index];
+                        vertex_data.vt_gl_texCoord[faceVertexIndex_index + start_pointer] = vt_uv;
+                    }
+                } else {
+                    vertex_data.vt_gl_texCoord[faceVertexIndex_index + start_pointer] = GfVec2f(0.0, 0.0);
+                }
+            }); // tbb::parallel_for  vt_faceVertexIndices.size()
+
+//                mtx.lock();
+//                actually_points += vt_faceVertexIndices.size();
+//                mtx.unlock();
+
+                subtimer.setEndPoint();
+
+//                spdlog::info("start_tri_pointer - {} - {}", start_tri_pointer, prim.GetPath().GetString());
+
+                subtimer.setStartPoint("Compute TriangleIndices");
+                // ----- Simple Triangulation ----- //
+                computeTriangleIndices(vt_faceVertexCounts, vertex_data, start_tri_pointer * 3, start_pointer, UsdGeomTokens->rightHanded);
+
+                QString info_triangulation = QString("Compute TriangleIndices <") + QString(prim.GetPath().GetString().c_str()) + QString(">");
+                subtimer.setEndPoint(info_triangulation.toStdString());
+
+            }); // tbb::parallel_do  stage->TraverseAll(),
+
+    m_timer.setEndPoint();
+
+
+    // ---------- Debug Test Triangulation ----------
+//    myTimer tri_timer;
+//    int prim_index = 0;
+//    for (UsdPrim prim: stage->TraverseAll()) {
+//
+//        if (prim.GetTypeName() != "Mesh") { continue; }
+//        spdlog::info("{} - prim - {}", prim_index, prim.GetPath().GetString());
+//        // Get Visibility
+//        TfToken visibility;
+//        prim.GetAttribute(UsdGeomTokens->visibility).Get(&visibility, timeCode);
+//        if (visibility == UsdGeomTokens->invisible) { continue; }
+//
+//        std::vector<int> mesh_data = meshDict[prim.GetPath().GetString()];
+//        int start_pointer = mesh_data[1]; // triangle amount start index
+//        int start_tri_pointer = mesh_data[2]; // triangle amount start index
+//
+//        VtArray<int> vt_faceVertexCounts;
+//        UsdAttribute attr_faceVertexCounts = prim.GetAttribute(UsdGeomTokens->faceVertexCounts);
+//        attr_faceVertexCounts.Get(&vt_faceVertexCounts, timeCode);
+//
+//
+//        // ----- Simple Triangulation ----- //
+//        tri_timer.setStartPoint("Compute TriangleIndices");
+//        spdlog::info("start_tri_pointer - {} - {}", start_tri_pointer * 3, prim.GetPath().GetString());
+//        int tri_amount = 0;
+//        for (int i = 0; i < vt_faceVertexCounts.size(); ++i) {
+//            tri_amount += (vt_faceVertexCounts[i] - 2) * 3;
+//        }
+//        spdlog::info("tri_amount - {}", tri_amount);
+//
+//        computeTriangleIndices(vt_faceVertexCounts, vertex_data, start_tri_pointer * 3, start_pointer, UsdGeomTokens->rightHanded);
+//        QString info_triangulation = QString("Compute TriangleIndices <") + QString(prim.GetPath().GetString().c_str()) + QString(">");
+//        tri_timer.setEndPoint(info_triangulation.toStdString());
+//    }
+
+}
+
 
 void usdParser::initGeometrySufficient() {
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
@@ -625,12 +897,49 @@ bool usdParser::simpleComputeTriangleIndices(VtArray<int> &faceVertexCounts, VtA
     return invalidTopology;
 }
 
+
+void usdParser::computeTriangleIndices(VtArray<int> &face_vertex_counts, VertexData &vertex_data, int ele_start_index, int face_start_index, const TfToken& orientation) {
+
+    // "Right": p1 = 1, p2 = 2
+    // "Left":  p1 = 2, p2 = 1
+    int p1, p2;
+    if (orientation == UsdGeomTokens->rightHanded) {
+        p1 = 1; p2 = 2;
+    } else {
+        p1 = 2; p2 = 1;
+    }
+
+    for (const auto & face_vertex_count : face_vertex_counts) {
+
+        // tri_index: 1, 2, 3, ...
+        for (int tri_index = 0; tri_index < face_vertex_count - 2; ++tri_index) {
+            // [0, 1, 2, 0, 2, 3]
+            // [0, 0 + 1, 0 + 2, 0, 0 + 2, 0 + 3]
+
+            vertex_data.indices[ele_start_index] = face_start_index;                        // 0, 0, 0
+            vertex_data.indices[ele_start_index + 1] = face_start_index + tri_index + p1;   // 1, 2, 3
+            vertex_data.indices[ele_start_index + 2] = face_start_index + tri_index + p2 ;  // 2, 3, 4
+            ele_start_index += 3;
+
+        } // for face_vertex_count - 2
+
+        // face_vertex_counts: [4, 4, 5, 4]
+        // 0 -> 4 -> 8 -> 13
+        face_start_index += face_vertex_count;
+
+    } // for face_vertex_counts
+
+}
+
+
 void usdParser::updateVertex() {
     qDebug() << "updating - CTimeCode: " << currentTimeCode.GetValue();
 //    currentTimeCode = UsdTimeCode(currentTimeCode.GetValue() + 1.0);
 
     if(currentTimeCode.GetValue() <= stage->GetEndTimeCode()){
-        getDataBySpecifyFrame_TBB(currentTimeCode);
+//        getDataBySpecifyFrame_TBB(currentTimeCode);
+        getDataBySpecifyFrame_TBB_Optimize_Triangulation(currentTimeCode);
+//        getDataBySpecifyFrame_default(currentTimeCode);
     }else{
         currentTimeCode = animStartFrame;
     }
@@ -744,7 +1053,8 @@ void usdParser::getDataByAll() {
             timeCodes,
             [this](UsdTimeCode step)
     {
-        getDataBySpecifyFrame_TBB(UsdTimeCode(step));
+        getDataBySpecifyFrame_TBB_Optimize_Triangulation(UsdTimeCode(step));
     });
+
 }
 
