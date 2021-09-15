@@ -20,5 +20,5 @@
 #add_subdirectory(20_SkeletalAnimation)
 #add_subdirectory(21_PointCacheAnimation)
 #add_subdirectory(22_UDIM)
-#add_subdirectory(23_ReadusdWithTBB)
+add_subdirectory(23_ReadusdWithTBB)
 add_subdirectory(24_ObjectSelection)

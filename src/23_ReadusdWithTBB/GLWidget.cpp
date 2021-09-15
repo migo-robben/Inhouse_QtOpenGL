@@ -93,8 +93,8 @@ void GLWidget::initShaders() {
 }
 
 void GLWidget::initGeometry() {
-//    QString usdFilePath = QString("resource/geometry/usdAnim/SchoolBus/school_bus_sub_low.usd");
-    QString usdFilePath = QString("resource/geometry/Rubbertoy/rubberToy_Debug.usda");
+    QString usdFilePath = QString("resource/geometry/usdAnim/SchoolBus/school_bus_sub_low.usd");
+//    QString usdFilePath = QString("resource/geometry/Rubbertoy/rubberToy_Debug.usda");
 //    QString usdFilePath = QString("resource/geometry/usdAnim/multi_obj.usd");
     parseUSDFile(usdFilePath);
 }
