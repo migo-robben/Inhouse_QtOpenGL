@@ -181,7 +181,7 @@ void MainWidget::initGeometry() {
 }
 
 void MainWidget::initTexture() {
-    auto imageData = QImage(QString("F:/CLionProjects/QtReference/src/17_qopengl_mess/images/wood.png")).convertToFormat(QImage::Format_RGBA8888);
+    auto imageData = QImage(QString("src/texture/wood.png")).convertToFormat(QImage::Format_RGBA8888);
 
     wood_texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
     wood_texture->create();
