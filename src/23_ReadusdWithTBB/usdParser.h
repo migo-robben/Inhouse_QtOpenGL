@@ -47,6 +47,7 @@ struct VertexData{
     VtVec3fArray vt_gl_position;
     VtVec2fArray vt_gl_texCoord;
     VtVec3fArray vt_gl_normal;
+    VtVec3fArray vt_gl_display_color;
     std::vector<GLuint> indices;
 };
 
@@ -56,6 +57,7 @@ public:
 
     void getUVToken(UsdPrim &prim, TfToken &tf_uv, bool &uvs);
     void getDataBySpecifyFrame_default(UsdTimeCode timeCode);
+    void getDataBySpecifyFrame_optimized_non_TBB(UsdTimeCode timeCode);
     void getDataBySpecifyFrame_TBB(UsdTimeCode timeCode);
     void getDataBySpecifyFrame_TBB_Optimize_Triangulation(UsdTimeCode timeCode);
     void getDataByAll();
@@ -80,7 +82,7 @@ public:
     double animEndFrame;
     UsdTimeCode currentTimeCode;
     UsdTimeCode lastDrewTimeCode;
-    int attributeCount = 3;
+    int attributeCount = 4;
 
 protected:
     QOpenGLVertexArrayObject vao;

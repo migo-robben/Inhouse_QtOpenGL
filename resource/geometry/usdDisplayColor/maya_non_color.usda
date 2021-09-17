@@ -1,0 +1,28 @@
+#usda 1.0
+(
+    defaultPrim = "pPlane1"
+    metersPerUnit = 0.01
+    upAxis = "Y"
+)
+
+def Mesh "pPlane1" (
+    kind = "component"
+)
+{
+    uniform bool doubleSided = 1
+    float3[] extent = [(-0.5, 0, -0.5), (0.5, 0, 0.5)]
+    int[] faceVertexCounts = [4, 4, 4, 4]
+    int[] faceVertexIndices = [0, 1, 4, 3, 1, 2, 5, 4, 3, 4, 7, 6, 4, 5, 8, 7]
+    normal3f[] normals = [(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0)] (
+        interpolation = "faceVarying"
+    )
+    point3f[] points = [(-0.5, 0, 0.5), (0, 0, 0.5), (0.5, 0, 0.5), (-0.5, 0, 0), (0, 0, 0), (0.5, 0, 0), (-0.5, 0, -0.5), (0, 0, -0.5), (0.5, 0, -0.5)]
+    texCoord2f[] primvars:map1 = [(0, 0), (0.5, 0), (0.5, 0.5), (0, 0.5), (1, 0), (1, 0.5), (0.5, 1), (0, 1), (1, 1)] (
+        interpolation = "vertex"
+    )
+    int[] primvars:map1:indices = [0, 1, 4, 3, 2, 5, 7, 6, 8]
+    uniform token subdivisionScheme = "none"
+    double3 xformOp:translate = (0, 0.1254949177967365, 0)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+}
+
