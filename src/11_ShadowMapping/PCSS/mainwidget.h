@@ -14,6 +14,7 @@
 #include "Helper/CubeGeometry.h"
 #include "Helper/FloorGeometry.h"
 #include "Helper/RectangleGeometry.h"
+#include "Helper/CustomGeometry.h"
 
 class CubeGeometry;
 class FloorGeometry;
@@ -67,6 +68,7 @@ private:
     FloorGeometry *floor_geometry;
     FloorGeometry *light_geometry;
     RectangleGeometry *rect_geometry;
+    CustomGeometry* custom_geometry;
 
     Camera *camera;
     QMatrix4x4 model;
