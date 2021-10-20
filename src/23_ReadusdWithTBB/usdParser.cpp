@@ -39,7 +39,6 @@ void usdParser::getUVToken(UsdPrim &prim, TfToken &tf_uv, bool &uvs) {
     }
 }
 
-
 void usdParser::getDataBySpecifyFrame_default(UsdTimeCode timeCode) {
     spdlog::info("\tGet data by specify frame: {}", timeCode.GetValue());
 
@@ -211,7 +210,6 @@ void usdParser::getDataBySpecifyFrame_default(UsdTimeCode timeCode) {
 //    m_timer.setStartPoint("InitGeometry buffer allocate");
 //    initGeometry();
 }
-
 
 void usdParser::getDataBySpecifyFrame_optimized_non_TBB(UsdTimeCode timeCode) {
 
@@ -491,7 +489,6 @@ void usdParser::getDataBySpecifyFrame_optimized_non_TBB(UsdTimeCode timeCode) {
     m_timer.setEndPoint();
 
 }
-
 
 void usdParser::getDataBySpecifyFrame_TBB(UsdTimeCode timeCode) {
     auto search = geometry_data.find(timeCode.GetValue());
@@ -1064,7 +1061,6 @@ void usdParser::getDataBySpecifyFrame_TBB_Optimize_Triangulation(UsdTimeCode tim
 
 }
 
-
 void usdParser::initGeometrySufficient() {
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
 
@@ -1141,7 +1137,6 @@ void usdParser::initGeometry() {
     ebo.bind();
     ebo.allocate(vertex_data.indices.data(), vertex_data.indices.size() * sizeof(GLuint));
 }
-
 
 void usdParser::setupAttributePointer(QOpenGLShaderProgram *program) {
     QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
@@ -1247,7 +1242,6 @@ bool usdParser::simpleComputeTriangleIndices(VtArray<int> &faceVertexCounts, VtA
     return invalidTopology;
 }
 
-
 void usdParser::computeTriangleIndices(VtArray<int> &face_vertex_counts, VertexData &vertex_data, int ele_start_index, int face_start_index, const TfToken& orientation) {
 
     // "Right": p1 = 1, p2 = 2
@@ -1280,7 +1274,6 @@ void usdParser::computeTriangleIndices(VtArray<int> &face_vertex_counts, VertexD
     } // for face_vertex_counts
 
 }
-
 
 void usdParser::updateVertex() {
     qDebug() << "updating - CTimeCode: " << currentTimeCode.GetValue();
@@ -1412,4 +1405,3 @@ void usdParser::getDataByAll() {
     });
 //    getDataBySpecifyFrame_optimized_non_TBB(1);
 }
-
