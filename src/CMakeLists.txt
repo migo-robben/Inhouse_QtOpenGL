@@ -22,4 +22,5 @@
 #add_subdirectory(22_UDIM)
 #add_subdirectory(23_ReadusdWithTBB)
 #add_subdirectory(24_ObjectSelection)
-add_subdirectory(25_QMLScreenshotExample)
+#add_subdirectory(25_QMLScreenshotExample)
+add_subdirectory(26_ReadusdWithWireframe)

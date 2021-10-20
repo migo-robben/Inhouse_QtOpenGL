@@ -1,11 +1,10 @@
-#ifndef INHOUSE_QTOPENGL_CAMERA_H
-#define INHOUSE_QTOPENGL_CAMERA_H
-
+#ifndef _CAMERA_H_
+#define _CAMERA_H_
 
 #include <QOpenGLShaderProgram>
 
 class Camera {
-private:
+public:
     QVector3D Front;
     QVector3D Right;
     QVector3D Up;
@@ -15,25 +14,22 @@ private:
     float Yaw;
     float Pitch;
 
-    float MouseSensitivity = 0.30f;
+    float MouseSensitivity = 0.301f;
     float MouseZoomSensitivity = 0.015f;
     float MouseBiasSensitivity = 0.008f;
-
-    float PitchAngleLimit = 85.0f;
-
-    float PitchOffsetAngle = 0.0f;
-    float zoomFactor = 0.0f;
-
-    float zoomLimit = 0.25f;
-
-    float verticalBiasFactor = 0.0f;
-    float horizontalBiasFactor = 0.0f;
-    QVector3D defaultAimAt;
-
-public:
     float MouseWheelSensitivity = 0.1f;
+
+    float PitchAngleLimit;
+
     float fovUpperBound = 105.0f;
     float fovLowerBound = 15.0f;
+
+    float zoomFactor = 0.0f;
+    float zoomLimit = 0.25f;
+    float verticalBiasFactor = 0.0f;
+    float horizontalBiasFactor = 0.0f;
+
+    QVector3D defaultAimAt;
 
 public:
     explicit Camera(
@@ -59,19 +55,15 @@ public:
     void setCameraFov(qreal value) { fov = value; }
     qreal getCameraFov() const { return fov; }
 
-    void setScreenSize(QSize screen_size);
-    QSize getScreenSize();
-
     void setCameraPerspective(qreal aspect);
     QMatrix4x4 getCameraProjection();
-    void setCameraOrthographic(int orthographicWidth);
-
-    QMatrix4x4 getOrthoCameraProjection();
 
     float getDistanceFactor();
 
     QMatrix4x4 getCameraView();
-    qreal getCameraAspect();
+
+    void rotateCamera(QMatrix4x4 &matrix);
+    void setStatus();
 
 public:
     void rollBackToInitializeStatus();
@@ -88,7 +80,6 @@ public:
 private:
     QMatrix4x4 view{};
     QMatrix4x4 projection{};
-    QMatrix4x4 projectionOrtho{};
 
     qreal nearClipPlane{};
     qreal farClipPlane{};
@@ -99,12 +90,10 @@ private:
 
     QVector3D LimitZoom;
 
-    qreal cameraAspect;
-    QSize screenSize;
+    QVector3D LastWorldUp;
+
 public:
     void updateCameraVectors();
-
 };
-
 
 #endif
