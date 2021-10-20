@@ -1,6 +1,7 @@
 import QtQuick 2.12
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.12
+import QtPositioning 5.2
 
 Rectangle {
     id: background
@@ -142,7 +143,7 @@ Rectangle {
                     right: parent.right
                     top: parent.bottom
                 }
-                
+
                 width: parent.width
                 height: 1
                 color: background.border.color
@@ -183,6 +184,8 @@ Rectangle {
             width: parent.width
             height: background.height - titleBar.height
 
+            z: 2
+
             anchors {
                 top: titleBar.bottom
                 left: parent.left
@@ -222,62 +225,79 @@ Rectangle {
                 }
 
                 function drawLine(ctx) {
-                    ctx.lineWidth = paintCanvas.lineWidth
-                    ctx.strokeStyle = colorSlider.selectedColor
-                    ctx.lineJoin = 'round'
-                    ctx.lineCap = 'round'
-                    ctx.beginPath()
-                    ctx.moveTo(lastX, lastY)
-                    lastX = painterArea.mouseX
-                    lastY = painterArea.mouseY
-                    ctx.lineTo(lastX, lastY)
-                    ctx.stroke()
+                    if (lastX !== 0 && lastY !== 0) {
+                        ctx.lineWidth = paintCanvas.lineWidth
+                        ctx.strokeStyle = colorSlider.selectedColor
+                        ctx.lineJoin = 'round'
+                        ctx.lineCap = 'round'
+                        ctx.beginPath()
+                        ctx.moveTo(lastX, lastY)
+                        lastX = painterArea.mouseX
+                        lastY = painterArea.mouseY
+                        ctx.lineTo(lastX, lastY)
+                        ctx.stroke()
+                    }
+                    else {
+                        pasteLastFrame(ctx)
+                    }
                 }
 
                 function drawEraser(ctx) {
-                    ctx.lineWidth = paintCanvas.lineWidth
-                    ctx.globalCompositeOperation = 'destination-out'
-                    ctx.beginPath()
-                    ctx.moveTo(lastX, lastY)
-                    lastX = painterArea.mouseX
-                    lastY = painterArea.mouseY
-                    ctx.lineTo(lastX, lastY)
-                    ctx.stroke()
-                    ctx.globalCompositeOperation = 'source-over'
+                    if (lastX !== 0 && lastY !== 0) {
+                        ctx.lineWidth = paintCanvas.lineWidth
+                        ctx.lineJoin = 'round'
+                        ctx.lineCap = 'round'
+                        ctx.globalCompositeOperation = 'destination-out'
+                        ctx.beginPath()
+                        ctx.moveTo(lastX, lastY)
+                        lastX = painterArea.mouseX
+                        lastY = painterArea.mouseY
+                        ctx.lineTo(lastX, lastY)
+                        ctx.stroke()
+                        ctx.globalCompositeOperation = 'source-over'
+                    }
+                    else {
+                        pasteLastFrame(ctx)
+                    }
                 }
 
                 function drawArrow(ctx) {
-                    ctx.fillStyle = colorSlider.selectedColor
-                    ctx.fill()
+                    lastX = painterArea.mouseX
+                    lastY = painterArea.mouseY
 
-                    var offsetFactor = 22
-                    var arrowScaleFactor = 2.0
+                    if (lastX !== 0 && lastY !== 0 && arrowStartX !== 0 && arrowStartY !== 0) {
+                        ctx.fillStyle = colorSlider.selectedColor
+                        ctx.fill()
 
-                    var slopy = Math.atan2((lastY - arrowStartY), (lastX - arrowStartX))
-                    var cosy = Math.cos(slopy)
-                    var siny = Math.sin(slopy)
+                        var offsetFactor = 22
+                        var arrowScaleFactor = 2.0
 
-                    var OffsetPosX1 = -offsetFactor * cosy - (offsetFactor / arrowScaleFactor * siny)
-                    var OffsetPosX2 = -offsetFactor * cosy + (offsetFactor / arrowScaleFactor * siny)
-                    var OffsetPosY1 = -offsetFactor * siny + (offsetFactor / arrowScaleFactor * cosy)
-                    var OffsetPosY2 = offsetFactor * siny + (offsetFactor / arrowScaleFactor * cosy)
+                        var slopy = Math.atan2((lastY - arrowStartY), (lastX - arrowStartX))
+                        var cosy = Math.cos(slopy)
+                        var siny = Math.sin(slopy)
 
-                    offsetFactor = 18
-                    arrowScaleFactor = 4
+                        var OffsetPosX1 = -offsetFactor * cosy - (offsetFactor / arrowScaleFactor * siny)
+                        var OffsetPosX2 = -offsetFactor * cosy + (offsetFactor / arrowScaleFactor * siny)
+                        var OffsetPosY1 = -offsetFactor * siny + (offsetFactor / arrowScaleFactor * cosy)
+                        var OffsetPosY2 = offsetFactor * siny + (offsetFactor / arrowScaleFactor * cosy)
 
-                    var OffsetPosX3 = -offsetFactor * cosy - (offsetFactor / arrowScaleFactor * siny)
-                    var OffsetPosX4 = -offsetFactor * cosy + (offsetFactor / arrowScaleFactor * siny)
-                    var OffsetPosY3 = -offsetFactor * siny + (offsetFactor / arrowScaleFactor * cosy)
-                    var OffsetPosY4 = offsetFactor * siny + (offsetFactor / arrowScaleFactor * cosy)
+                        offsetFactor = 18
+                        arrowScaleFactor = 4
 
-                    ctx.beginPath()
-                    ctx.moveTo(lastX, lastY)
-                    ctx.lineTo(lastX + OffsetPosX1, lastY + OffsetPosY1)
-                    ctx.lineTo(lastX + OffsetPosX3, lastY + OffsetPosY3)
-                    ctx.lineTo(arrowStartX, arrowStartY)
-                    ctx.lineTo(lastX + OffsetPosX4, lastY - OffsetPosY4)
-                    ctx.lineTo(lastX + OffsetPosX2, lastY - OffsetPosY2)
-                    ctx.closePath()
+                        var OffsetPosX3 = -offsetFactor * cosy - (offsetFactor / arrowScaleFactor * siny)
+                        var OffsetPosX4 = -offsetFactor * cosy + (offsetFactor / arrowScaleFactor * siny)
+                        var OffsetPosY3 = -offsetFactor * siny + (offsetFactor / arrowScaleFactor * cosy)
+                        var OffsetPosY4 = offsetFactor * siny + (offsetFactor / arrowScaleFactor * cosy)
+
+                        ctx.beginPath()
+                        ctx.moveTo(lastX, lastY)
+                        ctx.lineTo(lastX + OffsetPosX1, lastY + OffsetPosY1)
+                        ctx.lineTo(lastX + OffsetPosX3, lastY + OffsetPosY3)
+                        ctx.lineTo(arrowStartX, arrowStartY)
+                        ctx.lineTo(lastX + OffsetPosX4, lastY - OffsetPosY4)
+                        ctx.lineTo(lastX + OffsetPosX2, lastY - OffsetPosY2)
+                        ctx.closePath()
+                    }
                 }
 
                 function drawUndoRedo(ctx) {
@@ -300,6 +320,17 @@ Rectangle {
                     }
                 }
 
+                function pasteLastFrame(ctx) {
+                    if (mustGetImageData) {
+                        tempImageDataArrow = ctx.getImageData(0, 0, paintCanvas.width, paintCanvas.height)
+                        mustGetImageData = false
+                    }
+
+                    ctx.clearRect(0, 0, paintCanvas.width, paintCanvas.height)
+                    if (undoStack.length > 0)
+                        ctx.putImageData(tempImageDataArrow, 0, 0, 0, 0, paintCanvas.width, paintCanvas.height)
+                }
+
                 function simpleDraw(ctx) {
                     // Just for debug
                     // setup the stroke
@@ -307,8 +338,8 @@ Rectangle {
 
                     // create a path
                     ctx.beginPath()
-                    ctx.moveTo(50,50)
-                    ctx.lineTo(150,50)
+                    ctx.moveTo(0, 0)
+                    ctx.lineTo(50, 50)
 
                     // stroke path
                     ctx.stroke()
@@ -318,23 +349,17 @@ Rectangle {
                     var ctx = getContext('2d')
                     switch (toolStatus) {
                         case 0:
-                            drawLine(ctx)
+                            if (painterArea.pressed || resizeWindowArea.resizingCanvas) {
+                                drawLine(ctx)
+                            }
                             break
                         case 1:
-                            drawEraser(ctx)
+                            if (painterArea.pressed || resizeWindowArea.resizingCanvas) {
+                                drawEraser(ctx)
+                            }
                             break
                         case 2: // draw arrow
-                            lastX = painterArea.mouseX
-                            lastY = painterArea.mouseY
-
-                            if (mustGetImageData) {
-                                tempImageDataArrow = ctx.getImageData(0, 0, paintCanvas.width, paintCanvas.height)
-                                mustGetImageData = false
-                            }
-
-                            ctx.clearRect(0, 0, paintCanvas.width, paintCanvas.height)
-                            if (undoStack.length > 0)
-                                ctx.putImageData(tempImageDataArrow, 0, 0, 0, 0, paintCanvas.width, paintCanvas.height)
+                            pasteLastFrame(ctx)
                             drawArrow(ctx)
                             break
                         case 3: // undo
@@ -357,16 +382,19 @@ Rectangle {
                 }
 
                 onImageLoaded: {
-                    // console.log("Finish Loaded Image.")
                     requestPaint()
                 }
 
                 onPainted: {
-                    // console.log("On onPainted")
+                    // console.log("onPainted")
+                    // console.log("On onPainted, toolStatus: ", toolStatus, ", last toolStatus: ", lastToolStatus)
 
                     if (toolStatus === 3 || toolStatus === 4 || toolStatus === 5 || toolStatus === 6 || toolStatus === 7) {
                         toolStatus = lastToolStatus
                     }
+
+                    if (paintCanvas.toolStatus === 0 || paintCanvas.toolStatus === 1)
+                        painterArea.hoverEnabled = true
 
                     // console.log("UndoStack lenght: ", undoStack.length, ", RedoStack lenght: ", redoStack.length, "Tool Status: ", toolStatus)
                     // console.log("Current tool status: ", toolStatus)
@@ -376,13 +404,40 @@ Rectangle {
                     // console.log("On onCompleted")
                 }
 
+                Rectangle {
+                    id: brushCircleShape
+
+                    anchors.fill: parent.fill
+
+                    width: paintCanvas.lineWidth
+                    height: paintCanvas.lineWidth
+                    radius: width / 2
+
+                    color: colorSlider.selectedColor
+                    border.color: colorSlider.selectedColor
+                    border.width: 1
+
+                    visible: false
+                }
+
                 MouseArea {
                     id: painterArea
                     width: paintCanvas.width
                     height: paintCanvas.height
                     anchors.fill: parent.fill
+                    hoverEnabled: true
+
+                    function mouseInMouseArea(mousePositionMapToCanvas, canvas) {
+                        if ((0 < mousePositionMapToCanvas.x && mousePositionMapToCanvas.x < canvas.width) &&
+                            (0 < mousePositionMapToCanvas.y && mousePositionMapToCanvas.y < canvas.height)) {
+                            return true
+                        }
+                        return false
+                    }
 
                     onPressed: {
+                        // console.log("On Pressed")
+                        hoverEnabled = false
                         paintCanvas.preUndoStackLength = paintCanvas.undoStack.length
                         paintCanvas.lastX = mouseX
                         paintCanvas.lastY = mouseY
@@ -392,15 +447,45 @@ Rectangle {
                     }
 
                     onPositionChanged: {
+                        // console.log("On Move")
+                        if (paintCanvas.toolStatus === 0 || paintCanvas.toolStatus === 1) {
+                            var mousePositionMapToCanvas = mapToItem(paintCanvas, mouseX, mouseY)
+                            brushCircleShape.visible = mouseInMouseArea(mousePositionMapToCanvas, paintCanvas)
+                            brushCircleShape.x = mouseX - brushCircleShape.width / 2
+                            brushCircleShape.y = mouseY - brushCircleShape.height / 2
+
+                            if (paintCanvas.toolStatus === 0) {
+                                brushCircleShape.color = colorSlider.selectedColor
+                                brushCircleShape.border.color = colorSlider.selectedColor
+                                brushCircleShape.border.width = 0
+                            } else if (paintCanvas.toolStatus === 1) {
+                                brushCircleShape.color = "#00000000"
+                                brushCircleShape.border.color = "#EDEDED"
+                                brushCircleShape.border.width = 2
+                            }
+                        }
+
                         paintCanvas.requestPaint()
                     }
 
                     onWheel: {
                         paintCanvas.lineWidth = paintCanvas.lineWidth >= 1 ? (paintCanvas.lineWidth + wheel.angleDelta.y / 120) : 1
+
+                        brushCircleShape.x = mouseX - brushCircleShape.width / 2
+                        brushCircleShape.y = mouseY - brushCircleShape.height / 2
+                    }
+
+                    onEntered: {
+                        // console.log("On Entered")
+                    }
+
+                    onExited: {
+                        // console.log("On Exited")
+                        brushCircleShape.visible = false
                     }
 
                     onReleased: {
-                        // console.log("Mouse Release")
+                        // console.log("On Release")
 
                         // push current history to undoStack
                         var imageDataURL = paintCanvas.toDataURL('image/png')
@@ -413,16 +498,21 @@ Rectangle {
                         }
 
                         // To prevent tailing, you can comment the following code to see the tailing effects
-                        if (paintCanvas.toolStatus === 0) {
-                            paintCanvas.toolStatus = 3
-                            paintCanvas.requestPaint()
-                        }
-
-                        if (paintCanvas.toolStatus === 2) {
+                        if (paintCanvas.toolStatus === 0 || paintCanvas.toolStatus === 1 || paintCanvas.toolStatus === 2) {
                             paintCanvas.toolStatus = 3
                             paintCanvas.mustGetImageData = true
                             paintCanvas.requestPaint()
                         }
+
+                        // rollback to init-status
+                        paintCanvas.lastX = 0
+                        paintCanvas.lastY = 0
+
+                        paintCanvas.arrowStartX = 0
+                        paintCanvas.arrowStartY = 0
+
+                        if (paintCanvas.toolStatus === 0 || paintCanvas.toolStatus === 1)
+                            hoverEnabled = true
                     }
                 }
             }
@@ -441,7 +531,7 @@ Rectangle {
 
                 visible: false
 
-                
+
                 transform: Scale {
                     origin.x: width / 2
                     origin.y: height / 2
@@ -455,7 +545,7 @@ Rectangle {
                 target: screenShotImage
                 property: "scaleFractor"
                 to: 0.0
-                duration: 500
+                duration: 300
                 easing.type: Easing.OutQuad
 
                 onFinished: {
@@ -489,6 +579,14 @@ Rectangle {
 
                 spacing: 0
 
+                function rollbackCanvasStatus() {
+                    paintCanvas.lastX = 0
+                    paintCanvas.lastY = 0
+
+                    paintCanvas.arrowStartX = 0
+                    paintCanvas.arrowStartY = 0
+                }
+
                 ToolBarButton {
                     id: pencilBtn
 
@@ -499,6 +597,14 @@ Rectangle {
                         arrowBtn.isSelected = false
                         paintCanvas.toolStatus = 0
                         paintCanvas.lastToolStatus = paintCanvas.toolStatus
+
+                        if (paintCanvas.undoStack.length > 0) {
+                            paintCanvas.mustGetImageData = true
+                        }
+
+                        rowToolBtns.rollbackCanvasStatus()
+
+                        painterArea.hoverEnabled = true
                     }
                 }
 
@@ -511,6 +617,15 @@ Rectangle {
                         pencilBtn.isSelected = false
                         arrowBtn.isSelected = false
                         paintCanvas.toolStatus = 1
+                        paintCanvas.lastToolStatus = paintCanvas.toolStatus
+
+                        if (paintCanvas.undoStack.length > 0) {
+                            paintCanvas.mustGetImageData = true
+                        }
+
+                        rowToolBtns.rollbackCanvasStatus()
+
+                        painterArea.hoverEnabled = true
                     }
                 }
 
@@ -528,6 +643,10 @@ Rectangle {
                         if (paintCanvas.undoStack.length > 0) {
                             paintCanvas.mustGetImageData = true
                         }
+
+                        rowToolBtns.rollbackCanvasStatus()
+
+                        painterArea.hoverEnabled = false
                     }
                 }
 
@@ -539,11 +658,13 @@ Rectangle {
                         if (paintCanvas.undoStack.length > 0) {
                             var lastImageData = paintCanvas.undoStack.pop()
                             paintCanvas.redoStack.push(lastImageData)
-                            
+
                             // keep last tool status
                             paintCanvas.lastToolStatus = paintCanvas.toolStatus
                             paintCanvas.toolStatus = 3
                             paintCanvas.requestPaint()
+
+                            rowToolBtns.rollbackCanvasStatus()
                         }
                     }
                 }
@@ -561,6 +682,8 @@ Rectangle {
                             paintCanvas.lastToolStatus = paintCanvas.toolStatus
                             paintCanvas.toolStatus = 4
                             paintCanvas.requestPaint()
+
+                            rowToolBtns.rollbackCanvasStatus()
                         }
                     }
                 }
@@ -571,6 +694,7 @@ Rectangle {
 
                     onClicked: {
                         backend.batchSaveCaptureScreenImageToDisk()
+                        rowToolBtns.rollbackCanvasStatus()
                     }
                 }
 
@@ -580,6 +704,7 @@ Rectangle {
 
                     onClicked: {
                         internalFunction.callWidgetToCaptureScreen()
+                        rowToolBtns.rollbackCanvasStatus()
                     }
                 }
 
@@ -606,6 +731,8 @@ Rectangle {
                         animationColorSlider.to = settingBtn.isSelected ? 1 : 0
                         animationColorSlider.easing.type = settingBtn.isSelected ? Easing.OutBack : Easing.InBack
                         animationColorSlider.running = true
+
+                        rowToolBtns.rollbackCanvasStatus()
                     }
                 }
 
@@ -617,7 +744,7 @@ Rectangle {
                     height: 30
 
                     function repaintThelastFrame() {
-                        if (paintCanvas.undoStack.length > 0) {                                    
+                        if (paintCanvas.undoStack.length > 0) {
                             // keep last tool status
                             paintCanvas.toolStatus = 3
                             paintCanvas.requestPaint()
@@ -651,12 +778,20 @@ Rectangle {
                             property int previousX
                             property int previousY
                             property var lastToolStatus
+                            property bool resizingCanvas: false
 
                             onPressed: {
+                                resizingCanvas = true
+
                                 previousX = mouseX
                                 previousY = mouseY
 
                                 lastToolStatus = paintCanvas.toolStatus
+                                if (paintCanvas.undoStack.length > 0) {
+                                    paintCanvas.mustGetImageData = true
+                                }
+
+                                rowToolBtns.rollbackCanvasStatus()
                             }
 
                             onPositionChanged: {
@@ -668,6 +803,8 @@ Rectangle {
                             onReleased: {
                                 paintCanvas.toolStatus = lastToolStatus
                                 resizeToolArea.repaintThelastFrame()
+
+                                resizingCanvas = false
                             }
                         }
                     }
