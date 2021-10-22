@@ -96,7 +96,7 @@ void GLWidget::initShaders() {
 }
 
 void GLWidget::initGeometry() {
-    QString usdFilePath = QString("N:/Projects/Library/Rubbertoy/rubberToy_Debug.usda");
+    QString usdFilePath = QString("resource\\geometry\\Rubbertoy\\rubberToy_Debug.usda");
     parseUSDFile(usdFilePath);
 }
 
