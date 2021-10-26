@@ -107,11 +107,14 @@ ApplicationWindow {
             }
 
             currentFrameTextEditor.frame = selectedFrame
+            currentFrameTextEditor.currentText = selectedFrame.toString()
         }
 
         function computeForwardDuration() {
             var fDruation = (playbackEndFrame.frame - currentFrameTextEditor.frame) / fps.frame * 1000
             fDruation = fDruation < 0 ? 0 : fDruation
+            currentFrameTextEditor.currentText = currentFrameTextEditor.frame.toString()
+
             return fDruation
         }
 
@@ -183,7 +186,7 @@ ApplicationWindow {
                     Repeater {
                         id: repeaterFrame
                         model: timelineBackground.numberFrameRect
-                        
+
                         anchors.fill: parent
 
                         Item {
@@ -218,7 +221,7 @@ ApplicationWindow {
 
                         property int startX
                         property int rectWidth
-                        
+
                         x : startX
                         width: rectWidth
                         height: timelineRectRow.height
@@ -260,8 +263,11 @@ ApplicationWindow {
 
                 enabled: textEnabled
 
+
+
                 onCurrentTextChanged: {
                     internal.computeDrawCurrentFrame()
+                    currentFrameTextEditor.frame = currentFrameTextEditor.currentText.toString()
                 }
             }
 
@@ -299,7 +305,7 @@ ApplicationWindow {
                 onClicked: {
                     var playbackStartFrameValue = playbackStartFrame.frame
                     currentFrameTextEditor.frame = playbackStartFrameValue
-                    
+
                     if (playForward.running) {
                         playForward.stop()
                         playForward.start()
@@ -324,7 +330,7 @@ ApplicationWindow {
 
                 btnIconSource: timelineLayout.backwardStatus ? "icons/play_backwards.png" : "icons/stop.png"
                 pressed_Color: timelineLayout.backwardStatus ? "#ABABAB" : "#FF0000"
-                
+
                 sidePadding: 3
                 left_margin: -4
 
@@ -407,7 +413,7 @@ ApplicationWindow {
                 onClicked: {
                     var playbackEndFrameValue = playbackEndFrame.frame
                     currentFrameTextEditor.frame = playbackEndFrameValue
-                    
+
                     if (playForward.running) {
                         playForward.stop()
                         playForward.start()
@@ -445,12 +451,29 @@ ApplicationWindow {
                 left_margin: 5
 
                 frame: 1
+                currentText: "1"
 
                 onFrameChanged: {
                     var animationStartFrameValue = animationStartFrame.frame
                     var playbackStartFrameValue = playbackStartFrame.frame
                     var playbackEndFrameValue = playbackEndFrame.frame
                     var animationEndFrameValue = animationEndFrame.frame
+
+                    // Set values
+                    timeRangeSlider.from = animationStartFrameValue
+                    timeRangeSlider.to = animationEndFrameValue
+                    timeRangeSlider.setValues(playbackStartFrameValue, playbackEndFrameValue)
+
+                    // Compute how to draw timeline
+                    internal.computeHowToDrawTimeLine()
+                    internal.computeDrawCurrentFrame()
+                }
+
+                onCurrentTextChanged: {
+                    var animationStartFrameValue = parseInt(animationStartFrame.currentText)
+                    var playbackStartFrameValue = parseInt(playbackStartFrame.currentText)
+                    var playbackEndFrameValue = parseInt(playbackEndFrame.currentText)
+                    var animationEndFrameValue = parseInt(animationEndFrame.currentText)
 
                     if (animationStartFrameValue >= playbackEndFrameValue) {
                         animationStartFrameValue = playbackEndFrameValue
@@ -459,27 +482,14 @@ ApplicationWindow {
                         playbackStartFrameValue = animationStartFrameValue
                     }
 
-                    // console.log("Animation Start Frame Text Changed: \n\t",
-                    //     animationStartFrameValue,
-                    //     playbackStartFrameValue,
-                    //     playbackEndFrameValue,
-                    //     animationEndFrameValue)
+                    animationStartFrame.currentText = animationStartFrameValue.toString()
+                    playbackStartFrame.currentText = playbackStartFrameValue.toString()
+                    playbackEndFrame.currentText = playbackEndFrameValue.toString()
+                    animationEndFrame.currentText = animationEndFrameValue.toString()
 
-                    // Set values
-                    timeRangeSlider.from = animationStartFrameValue
-                    timeRangeSlider.to = animationEndFrameValue
-                    timeRangeSlider.setValues(playbackStartFrameValue, playbackEndFrameValue)
-
-                    animationStartFrame.frame = animationStartFrameValue
-                    playbackStartFrame.frame = playbackStartFrameValue
-                    playbackEndFrame.frame = playbackEndFrameValue
-                    animationEndFrame.frame = animationEndFrameValue     
-
-                    // console.log(timeRangeSlider.from, timeRangeSlider.first.value, timeRangeSlider.second.value, timeRangeSlider.to)
-
-                    // Compute how to draw timeline
-                    internal.computeHowToDrawTimeLine()
-                    internal.computeDrawCurrentFrame()
+                    if (frame !== animationStartFrameValue) {
+                        frame = animationStartFrameValue
+                    }
                 }
             }
 
@@ -490,6 +500,7 @@ ApplicationWindow {
                 left_margin: 5
 
                 frame: 10
+                currentText: "10"
 
                 onFrameChanged: {
                     var animationStartFrameValue = animationStartFrame.frame
@@ -497,30 +508,33 @@ ApplicationWindow {
                     var playbackEndFrameValue = playbackEndFrame.frame
                     var animationEndFrameValue = animationEndFrame.frame
 
-                    playbackStartFrameValue = playbackStartFrameValue > playbackEndFrameValue ? playbackEndFrameValue : playbackStartFrameValue
-                    playbackStartFrameValue = playbackStartFrameValue < animationStartFrameValue ? animationStartFrameValue : playbackStartFrameValue
-
-                    // console.log("Play Back Start Frame Text Changed: \n\t",
-                    //     animationStartFrameValue,
-                    //     playbackStartFrameValue,
-                    //     playbackEndFrameValue,
-                    //     animationEndFrameValue)
-
                     // Set values
                     timeRangeSlider.from = animationStartFrameValue
                     timeRangeSlider.to = animationEndFrameValue
                     timeRangeSlider.setValues(playbackStartFrameValue, playbackEndFrameValue)
 
-                    animationStartFrame.frame = animationStartFrameValue
-                    playbackStartFrame.frame = playbackStartFrameValue
-                    playbackEndFrame.frame = playbackEndFrameValue
-                    animationEndFrame.frame = animationEndFrameValue
-
-                    // console.log(timeRangeSlider.from, timeRangeSlider.first.value, timeRangeSlider.second.value, timeRangeSlider.to)
-
                     // Compute how to draw timeline
                     internal.computeHowToDrawTimeLine()
                     internal.computeDrawCurrentFrame()
+                }
+
+                onCurrentTextChanged: {
+                    var animationStartFrameValue = parseInt(animationStartFrame.currentText)
+                    var playbackStartFrameValue = parseInt(playbackStartFrame.currentText)
+                    var playbackEndFrameValue = parseInt(playbackEndFrame.currentText)
+                    var animationEndFrameValue = parseInt(animationEndFrame.currentText)
+
+                    playbackStartFrameValue = playbackStartFrameValue > playbackEndFrameValue ? playbackEndFrameValue : playbackStartFrameValue
+                    playbackStartFrameValue = playbackStartFrameValue < animationStartFrameValue ? animationStartFrameValue : playbackStartFrameValue
+
+                    animationStartFrame.currentText = animationStartFrameValue.toString()
+                    playbackStartFrame.currentText = playbackStartFrameValue.toString()
+                    playbackEndFrame.currentText = playbackEndFrameValue.toString()
+                    animationEndFrame.currentText = animationEndFrameValue.toString()
+
+                    if (frame !== playbackStartFrameValue) {
+                        frame = playbackStartFrameValue
+                    }
                 }
             }
 
@@ -565,17 +579,13 @@ ApplicationWindow {
                             var playbackEndFrameValue = playbackEndFrame.frame
                             var animationEndFrameValue = animationEndFrame.frame
 
-                            // console.log("Left Handle On Moved: \n\t",
-                            //     animationStartFrameValue,
-                            //     playbackStartFrameValue,
-                            //     playbackEndFrameValue,
-                            //     animationEndFrameValue)
-
                             timeRangeSlider.setValues(Math.round(timeRangeSlider.first.value), Math.round(timeRangeSlider.second.value))
                             playbackStartFrame.frame = Math.round(timeRangeSlider.first.value)
-                            // playbackStartFrame.currentText = Math.round(timeRangeSlider.first.value).toString()
 
-                            // console.log(timeRangeSlider.from, timeRangeSlider.first.value, timeRangeSlider.second.value, timeRangeSlider.to)
+                            animationStartFrame.currentText = timeRangeSlider.from.toString()
+                            playbackStartFrame.currentText = timeRangeSlider.first.value.toString()
+                            playbackEndFrame.currentText = timeRangeSlider.second.value.toString()
+                            animationEndFrame.currentText = timeRangeSlider.to.toString()
 
                             // Compute how to draw timeline
                             internal.computeHowToDrawTimeLine()
@@ -603,17 +613,13 @@ ApplicationWindow {
                             var playbackEndFrameValue = playbackEndFrame.frame
                             var animationEndFrameValue = animationEndFrame.frame
 
-                            // console.log("Right Handle On Moved: \n\t",
-                            //     animationStartFrameValue,
-                            //     playbackStartFrameValue,
-                            //     playbackEndFrameValue,
-                            //     animationEndFrameValue)
-
                             timeRangeSlider.setValues(Math.round(timeRangeSlider.first.value), Math.round(timeRangeSlider.second.value))
                             playbackEndFrame.frame = Math.round(timeRangeSlider.second.value)
-                            // playbackEndFrame.currentText = Math.round(timeRangeSlider.second.value).toString()
 
-                            // console.log(timeRangeSlider.from, timeRangeSlider.first.value, timeRangeSlider.second.value, timeRangeSlider.to)
+                            animationStartFrame.currentText = timeRangeSlider.from.toString()
+                            playbackStartFrame.currentText = timeRangeSlider.first.value.toString()
+                            playbackEndFrame.currentText = timeRangeSlider.second.value.toString()
+                            animationEndFrame.currentText = timeRangeSlider.to.toString()
 
                             // Compute how to draw timeline
                             internal.computeHowToDrawTimeLine()
@@ -623,13 +629,13 @@ ApplicationWindow {
 
                     background: Rectangle {
                         id: sliderBackground
-                        
+
                         property int sideMargin: 3
                         color: "#5D5D5D"
                         radius: 3
 
                         anchors.verticalCenter: parent.verticalCenter
-                        
+
                         x: leftHandle.x - sideMargin
                         width: rightHandle.x - leftHandle.x + leftHandle.width + sideMargin * 2
                         height: rangeSlider.height - 4
@@ -649,7 +655,7 @@ ApplicationWindow {
 
                             onPressed: {
                                 pressedMouseX = mouseX
-                                
+
                                 var animationStartFrameValue = animationStartFrame.frame
                                 var playbackStartFrameValue = playbackStartFrame.frame
                                 var playbackEndFrameValue = playbackEndFrame.frame
@@ -677,7 +683,7 @@ ApplicationWindow {
                                 if (pixelPerValueStep !== 0 ) {
                                     // Compute offset
                                     var offset = Math.round(mouseOffset / pixelPerValueStep)
-                                    
+
                                     if (offset < 0) {
                                         playbackStartFrameValue += offset
                                         playbackStartFrameValue = playbackStartFrameValue < animationStartFrameValue ? animationStartFrameValue : playbackStartFrameValue
@@ -694,15 +700,15 @@ ApplicationWindow {
                                 timeRangeSlider.to = animationEndFrameValue
                                 timeRangeSlider.setValues(playbackStartFrameValue, playbackEndFrameValue)
 
-                                // animationStartFrame.currentText = animationStartFrameValue.toString()
-                                // playbackStartFrame.currentText = playbackStartFrameValue.toString()
-                                // playbackEndFrame.currentText = playbackEndFrameValue.toString()
-                                // animationEndFrame.currentText = animationEndFrameValue.toString()
+                                // animationStartFrame.frame = animationStartFrameValue
+                                // playbackStartFrame.frame = playbackStartFrameValue
+                                // playbackEndFrame.frame = playbackEndFrameValue
+                                // animationEndFrame.frame = animationEndFrameValue
 
-                                animationStartFrame.frame = animationStartFrameValue
-                                playbackStartFrame.frame = playbackStartFrameValue
-                                playbackEndFrame.frame = playbackEndFrameValue
-                                animationEndFrame.frame = animationEndFrameValue
+                                animationStartFrame.currentText = animationStartFrameValue.toString()
+                                playbackStartFrame.currentText = playbackStartFrameValue.toString()
+                                playbackEndFrame.currentText = playbackEndFrameValue.toString()
+                                animationEndFrame.currentText = animationEndFrameValue.toString()
                             }
                         }
                     }
@@ -716,6 +722,7 @@ ApplicationWindow {
                 left_margin: 0
 
                 frame: 155
+                currentText: "155"
 
                 onFrameChanged: {
                     var animationStartFrameValue = animationStartFrame.frame
@@ -723,30 +730,33 @@ ApplicationWindow {
                     var playbackEndFrameValue = playbackEndFrame.frame
                     var animationEndFrameValue = animationEndFrame.frame
 
-                    playbackEndFrameValue = playbackEndFrameValue > animationEndFrameValue ? animationEndFrameValue : playbackEndFrameValue
-                    playbackEndFrameValue = playbackEndFrameValue < playbackStartFrameValue ? playbackStartFrameValue : playbackEndFrameValue
-
-                    // console.log("Play Back End Frame Text Changed: \n\t",
-                    //     animationStartFrameValue,
-                    //     playbackStartFrameValue,
-                    //     playbackEndFrameValue,
-                    //     animationEndFrameValue)
-
                     // Set values
                     timeRangeSlider.from = animationStartFrameValue
                     timeRangeSlider.to = animationEndFrameValue
                     timeRangeSlider.setValues(playbackStartFrameValue, playbackEndFrameValue)
 
-                    animationStartFrame.frame = animationStartFrameValue
-                    playbackStartFrame.frame = playbackStartFrameValue
-                    playbackEndFrame.frame = playbackEndFrameValue
-                    animationEndFrame.frame = animationEndFrameValue
-
-                    // console.log(timeRangeSlider.from, timeRangeSlider.first.value, timeRangeSlider.second.value, timeRangeSlider.to)
-
                     // Compute how to draw timeline
                     internal.computeHowToDrawTimeLine()
                     internal.computeDrawCurrentFrame()
+                }
+
+                onCurrentTextChanged: {
+                    var animationStartFrameValue = parseInt(animationStartFrame.currentText)
+                    var playbackStartFrameValue = parseInt(playbackStartFrame.currentText)
+                    var playbackEndFrameValue = parseInt(playbackEndFrame.currentText)
+                    var animationEndFrameValue = parseInt(animationEndFrame.currentText)
+
+                    playbackEndFrameValue = playbackEndFrameValue > animationEndFrameValue ? animationEndFrameValue : playbackEndFrameValue
+                    playbackEndFrameValue = playbackEndFrameValue < playbackStartFrameValue ? playbackStartFrameValue : playbackEndFrameValue
+
+                    animationStartFrame.currentText = animationStartFrameValue.toString()
+                    playbackStartFrame.currentText = playbackStartFrameValue.toString()
+                    playbackEndFrame.currentText = playbackEndFrameValue.toString()
+                    animationEndFrame.currentText = animationEndFrameValue.toString()
+
+                    if (frame !== playbackEndFrameValue) {
+                        frame = playbackEndFrameValue
+                    }
                 }
             }
 
@@ -757,12 +767,29 @@ ApplicationWindow {
                 left_margin: 5
 
                 frame: 200
+                currentText: "200"
 
                 onFrameChanged: {
                     var animationStartFrameValue = animationStartFrame.frame
                     var playbackStartFrameValue = playbackStartFrame.frame
                     var playbackEndFrameValue = playbackEndFrame.frame
                     var animationEndFrameValue = animationEndFrame.frame
+
+                    // Set values
+                    timeRangeSlider.from = animationStartFrameValue
+                    timeRangeSlider.to = animationEndFrameValue
+                    timeRangeSlider.setValues(playbackStartFrameValue, playbackEndFrameValue)
+
+                    // Compute how to draw timeline
+                    internal.computeHowToDrawTimeLine()
+                    internal.computeDrawCurrentFrame()
+                }
+
+                onCurrentTextChanged: {
+                    var animationStartFrameValue = parseInt(animationStartFrame.currentText)
+                    var playbackStartFrameValue = parseInt(playbackStartFrame.currentText)
+                    var playbackEndFrameValue = parseInt(playbackEndFrame.currentText)
+                    var animationEndFrameValue = parseInt(animationEndFrame.currentText)
 
                     if (animationEndFrameValue <= playbackStartFrameValue) {
                         animationEndFrameValue = playbackStartFrameValue
@@ -771,27 +798,14 @@ ApplicationWindow {
                         playbackEndFrameValue = animationEndFrameValue
                     }
 
-                    // console.log("Animation End Frame Text Changed: \n\t",
-                    //     animationStartFrameValue,
-                    //     playbackStartFrameValue,
-                    //     playbackEndFrameValue,
-                    //     animationEndFrameValue)
+                    animationStartFrame.currentText = animationStartFrameValue.toString()
+                    playbackStartFrame.currentText = playbackStartFrameValue.toString()
+                    playbackEndFrame.currentText = playbackEndFrameValue.toString()
+                    animationEndFrame.currentText = animationEndFrameValue.toString()
 
-                    // Set values
-                    timeRangeSlider.from = animationStartFrameValue
-                    timeRangeSlider.to = animationEndFrameValue
-                    timeRangeSlider.setValues(playbackStartFrameValue, playbackEndFrameValue)
-
-                    animationStartFrame.frame = animationStartFrameValue
-                    playbackStartFrame.frame = playbackStartFrameValue
-                    playbackEndFrame.frame = playbackEndFrameValue
-                    animationEndFrame.frame = animationEndFrameValue
-
-                    // console.log(timeRangeSlider.from, timeRangeSlider.first.value, timeRangeSlider.second.value, timeRangeSlider.to)
-
-                    // Compute how to draw timeline
-                    internal.computeHowToDrawTimeLine()
-                    internal.computeDrawCurrentFrame()
+                    if (frame !== animationEndFrameValue) {
+                        frame = animationEndFrameValue
+                    }
                 }
             }
 
@@ -807,7 +821,9 @@ ApplicationWindow {
                 top_margin: 7
                 left_margin: 5
                 right_margin: 5
+
                 frame: 24
+                currentText: "24"
 
                 property bool status: true
                 property bool textEnabled: true
@@ -819,10 +835,13 @@ ApplicationWindow {
                     internal.computeForwardDuration()
                     internal.computeBackwardDuration()
                 }
+
+                onCurrentTextChanged: {
+                    frame = parseInt(fps.currentText)
+                }
             }
 
             Component.onCompleted: {
-                console.log("RangeSlider completed.")
                 internal.computeHowToDrawTimeLine()
                 internal.computeDrawCurrentFrame()
             }

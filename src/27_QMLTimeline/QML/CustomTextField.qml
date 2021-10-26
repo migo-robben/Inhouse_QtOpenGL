@@ -9,8 +9,8 @@ Item {
     property int top_margin: 5
     property int left_margin: 2
     property int right_margin: 0
-    property int frame: 25
-    property string currentText: frame.toString()
+    property int frame: 52
+    property string currentText: "52"
     property color background_Color: "#2B2B2B"
 
     Layout.preferredWidth: 88
@@ -34,7 +34,7 @@ Item {
 
         TextInput {
             id: textEditorInput
-            
+
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
@@ -49,8 +49,8 @@ Item {
             selectionColor: "#5285A6"
 
             onEditingFinished: {
-                // currentText = text
-                frame = parseInt(text)
+                // console.log("On Editing Finished", text)
+                rootTextEditorItem.currentText = text
                 focus = false
             }
 
