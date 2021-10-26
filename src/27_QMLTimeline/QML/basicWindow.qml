@@ -230,7 +230,7 @@ ApplicationWindow {
                             anchors.bottomMargin: 5
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: currentFrameTextEditor.frame
-                            color: "#C4C4C4"
+                            color: frameRect.rectWidth > 0 ? "#C4C4C4" : "#00000000"
                         }
                     }
 
