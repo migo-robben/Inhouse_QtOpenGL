@@ -1,2 +1,3 @@
 add_subdirectory(HelloWorldWebAssembly)
 add_subdirectory(HelloOpenGLWindow)
+add_subdirectory(HelloOpenGLTexture)
