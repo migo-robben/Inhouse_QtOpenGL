@@ -62,10 +62,7 @@ void HelloWindow::paintGL() {
 
     // Binding program
     m_program->bind();
-
-    // Binding buffers
-    arrayBuf.bind();
-    indexBuf.bind();
+    QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
 
     // Calculate model view transformation
     QMatrix4x4 matrix;
@@ -122,6 +119,8 @@ void HelloWindow::initTextures() {
 }
 
 void HelloWindow::initGeometry() {
+    QOpenGLVertexArrayObject::Binder vaoBinder(&vao);
+
     // Generate buffers
     arrayBuf.create();
     indexBuf.create();
@@ -160,10 +159,7 @@ void HelloWindow::initGeometry() {
     m_program->enableAttributeArray(coordLocation);
     m_program->setAttributeBuffer(coordLocation, GL_FLOAT, offset, 2, sizeof(VertexData));
 
-
     m_program->release();
-    arrayBuf.release();
-    indexBuf.release();
 }
 
 QVector<VertexData> HelloWindow::getVerticesData() {

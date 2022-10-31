@@ -5,6 +5,7 @@
 #include <QtOpenGL/QOpenGLShaderProgram>
 #include <QtOpenGL/QOpenGLBuffer>
 #include <QtOpenGL/QOpenGLTexture>
+#include <QtOpenGL/QOpenGLVertexArrayObject>
 
 #include <QTimer>
 
@@ -56,8 +57,9 @@ private:
     QTimer *timer;
     float angle;
 
-    QOpenGLBuffer arrayBuf; // Vertex Buffer
-    QOpenGLBuffer indexBuf; // Index Buffer
+    QOpenGLVertexArrayObject vao;
+    QOpenGLBuffer arrayBuf; // Vertex Buffer, vbo
+    QOpenGLBuffer indexBuf; // Index Buffer, ebo
 
     int vertexLocation;
     int colorLocation;
