@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>images/awesomeface.png</file>
+        <file>images/container.jpg</file>
+        <file>model/rubbertoy.obj</file>
+    </qresource>
+</RCC>
