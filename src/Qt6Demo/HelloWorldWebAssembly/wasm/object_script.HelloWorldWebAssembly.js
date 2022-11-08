@@ -1,5 +1,6 @@
 main.obj
 helloworldwebassembly.js_plugin_import.obj
+qrc_application.obj
 C:/Qt/Qt6.4.0/6.4.0/wasm_32/lib/objects-Release/QWasmIntegrationPlugin_resources_1/.rcc/qrc_wasmfonts.cpp.o
 C:/Qt/Qt6.4.0/6.4.0/wasm_32/lib/objects-Release/Gui_resources_1/.rcc/qrc_qpdf.cpp.o
 C:/Qt/Qt6.4.0/6.4.0/wasm_32/lib/objects-Release/Gui_resources_2/.rcc/qrc_gui_shaders.cpp.o

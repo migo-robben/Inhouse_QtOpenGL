@@ -16,3 +16,4 @@ QT += widgets
 
 # Input
 SOURCES += main.cpp
+RESOURCES += ./application.qrc
