@@ -14,30 +14,16 @@ Camera::Camera(QVector3D pos, QVector3D up, float yaw, float pitch, QVector3D in
 
     initPosition = position;
     defaultAimAt = aimAt;
+    PitchAngleLimit = 90.0f;
+    LastWorldUp = WorldUp;
 
     updateCameraVectors();
     updateLimitZoom();
 }
 
 void Camera::setCameraPerspective(qreal aspect) {
-    this->cameraAspect = aspect;
     projection.setToIdentity();
-    projection.perspective((float)fov, (float)aspect, (float)nearClipPlane, (float)farClipPlane);
-}
-
-void Camera::setCameraOrthographic(int orthographicWidth) {
-    projectionOrtho.setToIdentity();
-    projectionOrtho.ortho(
-            -(float)orthographicWidth,
-            (float)orthographicWidth,
-            -(float)orthographicWidth,
-            (float)orthographicWidth,
-            (float)nearClipPlane,
-            (float)farClipPlane);
-}
-
-QMatrix4x4 Camera::getOrthoCameraProjection(){
-    return projectionOrtho;
+    projection.perspective(fov, aspect, nearClipPlane, farClipPlane);
 }
 
 QMatrix4x4 Camera::getCameraProjection() {
@@ -72,8 +58,7 @@ void Camera::rollBackToInitializeStatus() {
 
 void Camera::rollBackRotate(QMatrix4x4 &matrix) {
     // Update Yaw and Pitch
-    matrix.rotate(QQuaternion::fromAxisAndAngle(Up, Yaw));
-    matrix.rotate(QQuaternion::fromAxisAndAngle(Right, Pitch));
+    rotateCamera(matrix);
 
     setCameraPosition(matrix * getCameraPosition());
     updateCameraVectors();
@@ -105,18 +90,26 @@ void Camera::cameraRotateEvent(QPoint offset) {
     matrix.setToIdentity();
 
     // Update Yaw
-    Yaw += -1 * MouseSensitivity * (float)offset.x();
-    matrix.rotate(QQuaternion::fromAxisAndAngle(Up, Yaw));
+    Yaw += -1 * LastWorldUp.y() * MouseSensitivity * (float)offset.x();
 
     // Update Pitch
     Pitch += -1 * MouseSensitivity * (float)offset.y();
-    if ((Pitch + PitchOffsetAngle) < -PitchAngleLimit || (Pitch + PitchOffsetAngle) > PitchAngleLimit) {
-        if ((Pitch + PitchOffsetAngle) < -PitchAngleLimit)
-            Pitch = -PitchAngleLimit - PitchOffsetAngle;
-        else
-            Pitch = PitchAngleLimit - PitchOffsetAngle;
+    PitchAngleLimit = 90.0f;
+    float CircleAngle = 360.0f;
+    float CircleAngleLimit = 360.0f - 90.0f;
+
+    // first quadrant, (0, 90) || (-270, -360), WorldUp = (0, 1, 0)
+    // second quadrant, (90, 180) || (-180, -270), WorldUp = (0, -1, 0)
+    // third quadrant, (180, 270) || (-90, -180), WorldUp = (0, -1, 0)
+    // fourth quadrant, (270, 360) || (-0, -90), WorldUp = (0, 1, 0)
+    Pitch = std::fmod(Pitch, CircleAngle);
+    WorldUp = QVector3D(0, 1, 0);
+    if (abs(Pitch) > PitchAngleLimit && abs(Pitch) < CircleAngleLimit) {
+        WorldUp = QVector3D(0, -1, 0);
     }
-    matrix.rotate(QQuaternion::fromAxisAndAngle(Right, Pitch));
+    updateCameraVectors();
+
+    rotateCamera(matrix);
 
     setCameraPosition(matrix * getCameraPosition());
     updateCameraVectors();
@@ -181,14 +174,11 @@ void Camera::cameraTranslateEvent(QPoint offset) {
     updateLimitZoom();
 }
 
-qreal Camera::getCameraAspect() {
-    return cameraAspect;
+void Camera::rotateCamera(QMatrix4x4 &matrix) {
+    matrix.rotate(QQuaternion::fromAxisAndAngle(Up, Yaw * WorldUp.y()));
+    matrix.rotate(QQuaternion::fromAxisAndAngle(Right, Pitch * WorldUp.y()));
 }
 
-QSize Camera::getScreenSize() {
-    return screenSize;
-}
-
-void Camera::setScreenSize(QSize screen_size) {
-    screenSize = screen_size;
+void Camera::setStatus() {
+    LastWorldUp = WorldUp;
 }

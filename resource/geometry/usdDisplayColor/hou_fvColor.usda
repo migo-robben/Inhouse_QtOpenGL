@@ -1,0 +1,32 @@
+#usda 1.0
+(
+    defaultPrim = "usdexport4"
+    endTimeCode = 1
+    framesPerSecond = 24
+    metersPerUnit = 1
+    startTimeCode = 1
+    timeCodesPerSecond = 24
+    upAxis = "Y"
+)
+
+def Xform "usdexport4" (
+    kind = "component"
+)
+{
+    def Mesh "mesh_0"
+    {
+        float3[] extent = [(-5, 0, -5), (5, 0, 5)]
+        int[] faceVertexCounts = [4, 4, 4, 4]
+        int[] faceVertexIndices = [0, 1, 4, 3, 1, 2, 5, 4, 3, 4, 7, 6, 4, 5, 8, 7]
+        uniform token orientation = "leftHanded"
+        point3f[] points = [(-5, 0, -5), (0, 0, -5), (5, 0, -5), (-5, 0, 0), (0, 0, 0), (5, 0, 0), (-5, 0, 5), (0, 0, 5), (5, 0, 5)] (
+            interpolation = "vertex"
+        )
+        color3f[] primvars:displayColor = [(0.6416006, 0.080804706, 0.3038727), (0.8004638, 0.31464565, 0.6568761), (0.510895, 0.7084489, 0.8907703), (0.7754743, 0.7869307, 0.29710972), (0.89484656, 0.37666035, 0.89562845), (0.72838676, 0.65826905, 0.7292367), (0.8797984, 0.5318997, 0.9567152), (0.85376537, 0.39983487, 0.25502908), (0.8147795, 0.33639443, 0.47295916), (0.7638743, 0.09061158, 0.64497375), (0.79206765, 0.37318432, 0.0156110525), (0.92856574, 0.70785534, 0.36110163), (0.12358594, 0.8877317, 0.8530861), (0.020960689, 0.4898485, 0.58734715), (0.7890413, 0.24665105, 0.103497624), (0.9499016, 0.37995553, 0.98732865)] (
+            interpolation = "faceVarying"
+        )
+        int[] primvars:displayColor:indices = None
+        uniform token subdivisionScheme = "none"
+    }
+}
+

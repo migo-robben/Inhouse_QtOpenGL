@@ -135,14 +135,14 @@ void MainWidget::mousePressEvent(QMouseEvent *event) {
                               Qt::AltModifier);
         mouseMoveEvent(&fakeEvent);
     }
-    else if (event->buttons() == Qt::MidButton && event->modifiers() == Qt::AltModifier) {
+    else if (event->buttons() == Qt::MiddleButton && event->modifiers() == Qt::AltModifier) {
 
         mousePos = event->pos();
         QMouseEvent fakeEvent(QEvent::MouseMove,
                               event->localPos(),
                               event->screenPos(),
-                              Qt::MidButton,
-                              event->buttons() | Qt::MidButton,
+                              Qt::MiddleButton,
+                              event->buttons() | Qt::MiddleButton,
                               Qt::AltModifier);
         mouseMoveEvent(&fakeEvent);
     }
@@ -175,7 +175,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent *event) {
         update();
         mousePos = event->pos();
     }
-    else if (event->buttons() == Qt::MidButton && event->modifiers() == Qt::AltModifier) {
+    else if (event->buttons() == Qt::MiddleButton && event->modifiers() == Qt::AltModifier) {
         QPoint offset = event->pos() - mousePos;
 
         camera->cameraTranslateEvent(offset);
@@ -190,7 +190,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent *event) {
 }
 
 void MainWidget::wheelEvent(QWheelEvent *event) {
-    int offset = event->delta() / 8;
+    int offset = event->angleDelta().y() / 8;
 
     qreal fov = camera->getCameraFov();
     fov += (float)-offset * camera->MouseWheelSensitivity;

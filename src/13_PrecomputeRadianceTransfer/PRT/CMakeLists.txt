@@ -13,14 +13,10 @@ add_executable(${TARGET_NAME}
         "${CMAKE_CURRENT_SOURCE_DIR}/../../Helper/CustomGeometry.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../../Helper/Camera.cpp")
 
-target_link_libraries(${TARGET_NAME} Qt5::Core)
-target_link_libraries(${TARGET_NAME} Qt5::Widgets)
-target_link_libraries(${TARGET_NAME} Qt5::Gui)
-if(${ASSIMP_ROOT})
-    target_link_libraries(${TARGET_NAME} ${ASSIMP_ROOT}/lib/assimp-vc141-mt.lib)
-else()
-    target_link_libraries(${TARGET_NAME} assimp::assimp)
-endif()
+target_link_libraries(${TARGET_NAME} Qt6::Core)
+target_link_libraries(${TARGET_NAME} Qt6::Widgets)
+target_link_libraries(${TARGET_NAME} Qt6::Gui)
+target_link_libraries(${TARGET_NAME} ASSIMP_LIBRARIES)
 target_link_libraries(${TARGET_NAME} PRTLIB)
 
 set(INSTALL_DIR "${CMAKE_SOURCE_DIR}/bin")

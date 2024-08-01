@@ -16,7 +16,7 @@ cmake-build-*
 # Compiled Dynamic libraries
 *.so
 *.dylib
-*.dll
+#*.dll
 
 # Fortran module files
 *.mod
@@ -25,10 +25,10 @@ cmake-build-*
 *.lai
 *.la
 *.a
-*.lib
+#*.lib
 
 # Executables
-*.exe
+#*.exe
 *.out
 *.app
 
@@ -82,8 +82,21 @@ crashlytics-build.properties
 fabric.properties
 
 # bin
-bin
+/bin/
+/buddhaDI.dat
 /buddhaDS.dat
 /buddhaDU.dat
-/buddhaDI.dat
 /stpeters_probe.dat
+/src/20_SkeletalAnimation/resource/blendShapeTex*.png
+
+# maya project
+.mayaSwatches
+*.tx
+/src/20_SkeletalAnimation/resource/tmp/
+/src/resource/geometry/usdAnim/
+
+
+# python
+*.pyc
+__pycache__
+/resource/geometry/usdAnim/

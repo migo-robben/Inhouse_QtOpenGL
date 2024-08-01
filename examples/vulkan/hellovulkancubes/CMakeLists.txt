@@ -8,9 +8,9 @@ add_executable(${TARGET_NAME} ${COMPILE_FILES})
 target_link_directories(${TARGET_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS})
 target_link_libraries(${TARGET_NAME} ${Vulkan_LIBRARY})
 
-target_link_libraries(${TARGET_NAME} Qt5::Core)
-target_link_libraries(${TARGET_NAME} Qt5::Widgets)
-target_link_libraries(${TARGET_NAME} Qt5::Gui)
+target_link_libraries(${TARGET_NAME} Qt6::Core)
+target_link_libraries(${TARGET_NAME} Qt6::Widgets)
+target_link_libraries(${TARGET_NAME} Qt6::Gui)
 
 
 set(INSTALL_DIR "${CMAKE_SOURCE_DIR}/bin")

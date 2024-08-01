@@ -1,0 +1,24 @@
+#usda 1.0
+(
+    defaultPrim = "fvNormal_vUV"
+    metersPerUnit = 0.01
+    upAxis = "Y"
+)
+
+def Mesh "pPlane1"
+{
+    uniform bool doubleSided = 1
+    float3[] extent = [(-0.5, 0, -0.5), (0.5, 0.58598965, 0.5)]
+    int[] faceVertexCounts = [4, 4]
+    int[] faceVertexIndices = [2, 0, 1, 3, 5, 4, 2, 3]
+    normal3f[] normals = [(0, 1, 0), (0, 0.6490859, 0.7607151), (0, 0.6490859, 0.7607151), (0, 1, 0), (0, 0.6490859, -0.7607151), (0, 0.6490859, -0.7607151), (0, 1, 0), (0, 1, 0)] (
+        interpolation = "faceVarying"
+    )
+    point3f[] points = [(-0.5, 0, 0.5), (0.5, 0, 0.5), (-0.5, 0.58598965, 0), (0.5, 0.58598965, 0), (-0.5, 0, -0.5), (0.5, 0, -0.5)]
+    texCoord2f[] primvars:map1 = [(0, 0.5), (0, 0), (1, 0), (1, 0.5), (1, 1), (0, 1)] (
+        interpolation = "vertex"
+    )
+    int[] primvars:map1:indices = [1, 2, 0, 3, 5, 4]
+    uniform token subdivisionScheme = "none"
+}
+

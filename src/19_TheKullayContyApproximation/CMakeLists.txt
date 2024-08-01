@@ -15,9 +15,9 @@ add_executable(${TARGET_NAME}
 add_executable(EavgImage
         Eavg.cpp)
 
-target_link_libraries(${TARGET_NAME} Qt5::Core)
-target_link_libraries(${TARGET_NAME} Qt5::Widgets)
-target_link_libraries(${TARGET_NAME} Qt5::Gui)
+target_link_libraries(${TARGET_NAME} Qt6::Core)
+target_link_libraries(${TARGET_NAME} Qt6::Widgets)
+target_link_libraries(${TARGET_NAME} Qt6::Gui)
 if(${ASSIMP_ROOT})
     target_link_libraries(${TARGET_NAME} ${ASSIMP_ROOT}/lib/assimp-vc141-mt.lib)
 else()

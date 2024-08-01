@@ -1,6 +1,5 @@
-#ifndef INHOUSE_QTOPENGL_CUSTOMGEOMETRY_H
-#define INHOUSE_QTOPENGL_CUSTOMGEOMETRY_H
-
+#ifndef _CUSTOMGEOMETRY_H_
+#define _CUSTOMGEOMETRY_H_
 
 #include <QOpenGLBuffer>
 #include <QOpenGLTexture>
@@ -9,12 +8,19 @@
 #include <QOpenGLVertexArrayObject>
 
 #include "Helper/Geometry.h"
+#include "Helper/Bone.h"
+#include "Helper/Animation.h"
+#include "Helper/Animator.h"
 
 #include "assimp/scene.h"
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
 
+#define MAX_BONE_WEIGHTS 4
+
 class Geometry;
+class Animation;
+class Animator;
 
 class CustomGeometry : public Geometry {
 public:
@@ -23,15 +29,28 @@ public:
     ~CustomGeometry() override = default;
 
     void initGeometry() override;
-    void initGeometry(QVector<QVector<QVector3D>> &ObjectSHCoefficient);
+    void initAnimation();
+    void initAnimator();
 
+    QMap<QString, BoneInfo>& getOffsetMatMap() { return m_OffsetMatMap; }
+    int& getBoneCount() { return m_BoneCount; }
+
+    void extractBoneWeightForVertices(QVector<VertexData> &data, aiMesh* mesh, const aiScene* scene);
+    void setVertexBoneDataToDefault(VertexData &data);
+    QMatrix4x4 convertAIMatrixToQtFormat(const aiMatrix4x4& from);
+    void setVertexBoneData(VertexData& vertex, int boneID, float weight);
+    void initGeometry(QVector<QVector<QVector3D>> &ObjectSHCoefficient);
+    void initAllocate();
     void setupAttributePointer(QOpenGLShaderProgram *program) override;
     void setupAttributePointer(QOpenGLShaderProgram *program, bool RPT, int bandPower2);
-
+    void setupTransformationAttribute();
+    static int computeLevelByVCount(unsigned int, int);
     void drawGeometry(QOpenGLShaderProgram *program,
                       QMatrix4x4 model,
                       QMatrix4x4 view,
                       QMatrix4x4 projection,
+                      QOpenGLTexture *texture) override;
+    void drawGeometry(QOpenGLShaderProgram *program,
                       QOpenGLTexture *texture) override;
 
     void drawGeometry(QOpenGLShaderProgram *program,
@@ -40,6 +59,11 @@ public:
                       QMatrix4x4 projection);
 
     void setupObjectSHCoefficient(QVector<QVector<QVector3D>> &ObjectSHCoefficient);
+
+public:
+    void computeScaleFactor(QVector3D&);
+    void computeGeometryHierarchy(const aiNode*, QMatrix4x4);
+    QMap<QString, QMatrix4x4> m_geoMatrix;
 
 protected:
     QVector<VertexData> getVerticesData() override;
@@ -51,9 +75,32 @@ protected:
 private:
     QVector<VertexData> vertices;
     QVector<GLuint> indices;
+    QMap<QString, QVector<unsigned int>> verticesSlice;
+
+    // ----- Animation ----- //
+
+    QMap<QString, BoneInfo> m_OffsetMatMap;
+    int m_BoneCount = 0;
+    int m_indexIncrease = 0;
+    QVector<BlendShapePosition> m_blendShapeData;
+    QVector<QMatrix4x4> m_Transforms;
 
 public:
+    Animation animation;
+    int m_animationNum = 0;
+
+public:
+    QVector<QString> bsMeshOrderNames;
+    unsigned int verticesCount;
+    unsigned int indicesCount;
+
+    unsigned int m_BSID = 0;
+    QVector<QVector<BlendShapePosition>> m_BSDATA;
+
     QString modelFilePath;
+    QVector3D scaleFactor;
+    QVector<QVector4D> blendShapeSlice;
+    Animator animator;
 };
 
 

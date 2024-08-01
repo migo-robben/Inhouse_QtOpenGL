@@ -16,9 +16,10 @@ MainWidget::MainWidget(QWidget *parent)
           floor_geometry(nullptr),
           light_geometry(nullptr),
           rect_geometry(nullptr),
+          custom_geometry(nullptr),
           camera(nullptr) {
 
-    for (int i=0; i<4; i++) {
+    for (int i=0; i<5; i++) {
         programs.push_back(new QOpenGLShaderProgram(this));
     }
 
@@ -158,6 +159,15 @@ void MainWidget::initShaders() {
         close();
     if (!SHADER(3)->bind())
         close();
+
+    if (!SHADER(4)->addShaderFromSourceFile(QOpenGLShader::Vertex, "src/Shaders/CustomGeometry.vs.glsl"))
+        close();
+    if (!SHADER(4)->addShaderFromSourceFile(QOpenGLShader::Fragment, "src/Shaders/CustomGeometry.fs.glsl"))
+        close();
+    if (!SHADER(4)->link())
+        close();
+    if (!SHADER(4)->bind())
+        close();
 }
 
 void MainWidget::initGeometry() {
@@ -178,10 +188,15 @@ void MainWidget::initGeometry() {
     rect_geometry = new RectangleGeometry;
     rect_geometry->initGeometry();
     rect_geometry->setupAttributePointer(SHADER(1));
+
+    custom_geometry = new CustomGeometry("resource/geometry/Kitchen.obj");
+    custom_geometry->initGeometry();
+    custom_geometry->initAllocate();
+    custom_geometry->setupAttributePointer(SHADER(2));
 }
 
 void MainWidget::initTexture() {
-    auto imageData = QImage(QString("F:/CLionProjects/QtReference/src/17_qopengl_mess/images/wood.png")).convertToFormat(QImage::Format_RGBA8888);
+    auto imageData = QImage(QString("src/texture/wood.png")).convertToFormat(QImage::Format_RGBA8888);
 
     wood_texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
     wood_texture->create();
@@ -273,6 +288,11 @@ void MainWidget::renderScene() {
     SHADER(2)->setUniformValue("model", model);
     floor_geometry->drawGeometry(
             SHADER(2));
+
+    SHADER(2)->bind();
+    model.setToIdentity();
+    model.translate(5, 0, 0);
+    custom_geometry->drawGeometry(SHADER(2), model, camera->getCameraView(), camera->getCameraProjection());
 }
 
 void MainWidget::renderLight() {
@@ -353,6 +373,11 @@ void MainWidget::renderDepth() {
             lightView,
             lightProjection,
             wood_texture);
+
+    // custom geometry
+    model.setToIdentity();
+    model.translate(5, 0, 0);
+    custom_geometry->drawGeometry(SHADER(0), model, lightView, lightProjection);
 
     QOpenGLFramebufferObject::bindDefault();
 }
@@ -462,7 +487,7 @@ void MainWidget::configLight() {
             lightPos = QVector3D(-2.7f, 3.2f, 2.05f);
             break;
         case 1:
-            lightPos = QVector3D(-17.46f, 18.95f, 4.13f);
+            lightPos = QVector3D(-17.46f, 10.95f, 4.13f);
             break;
         default:
             lightPos = QVector3D(-2.7f, 3.2f, 2.05f);
