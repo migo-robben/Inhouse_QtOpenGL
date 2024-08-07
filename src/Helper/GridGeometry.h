@@ -30,6 +30,9 @@ public:
                       QOpenGLFramebufferObject *fbo,
                       bool saveToDisk);
 
+    void drawGeometry(QOpenGLShaderProgram *program,
+                      QOpenGLTexture *texture) override {}
+
 protected:
     QVector<VertexData> getVerticesData() override;
     QVector<GLuint> getIndices() override;

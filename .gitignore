@@ -100,3 +100,4 @@ fabric.properties
 *.pyc
 __pycache__
 /resource/geometry/usdAnim/
+/lib/

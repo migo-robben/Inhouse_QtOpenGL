@@ -2,6 +2,29 @@ cmake_minimum_required(VERSION 3.23)
 project(Inhouse_QtOpenGL)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_MODULE_PATH
+    ${USD_CMAKE_MODULE_PATH}/defaults
+    ${USD_CMAKE_MODULE_PATH}/modules
+    ${USD_CMAKE_MODULE_PATH}/macros
+)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(PXR_USE_DEBUG_PYTHON ON)
+endif()
+
+include(Options)
+include(ProjectDefaults)
+include(Packages)
+
+include(Public)
+add_custom_target(shared_libs)
+
+# Set cxx flags
+include(CXXDefaults)
+add_definitions(${_PXR_CXX_DEFINITIONS})
+set(CMAKE_CXX_FLAGS "${_PXR_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
+
+add_definitions(-D NOMINMAX)
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
