@@ -25,4 +25,5 @@
 #add_subdirectory(25_QMLScreenshotExample)
 #add_subdirectory(26_ReadusdWithWireframe)
 #add_subdirectory(26_MLAAExample)
-add_subdirectory(28_RenderLibrary)
+#add_subdirectory(28_RenderLibrary)
+add_subdirectory(29_OpenSubdivision)

@@ -58,18 +58,15 @@ find_package(Qt6QuickWidgets REQUIRED)
 # USD
 find_package(pxr REQUIRED)
 
-# configuration assimp
-#if(DEFINED ASSIMP_ROOT)
-#    set(ASSIMP_LIBRARIES ${ASSIMP_ROOT}/lib/assimp-vc142-${ASSIMP_LIB_FLAG}.lib)
-#    set(ASSIMP_INCLUDE_DIR "${ASSIMP_ROOT}/include")
-#    message(STATUS "Config ASSIMP_LIBRARIES: ${ASSIMP_LIBRARIES} ASSIMP_INCLUDE: ${ASSIMP_INCLUDE_DIR}")
-#else()
-#    find_package(Assimp CONFIG)
-#    set(ASSIMP_INCLUDE_DIR "/include")
-#    set(ASSIMP_LIBRARIES assimp::assimp)
-#    message(STATUS "vcpkg ASSIMP_LIBRARIES: ${ASSIMP_LIBRARIES} ASSIMP_INCLUDE: ${ASSIMP_INCLUDE_DIR}")
-#endif()
+# OpenSubdiv
+find_package(OpenSubdiv QUIET)
 
+# Assimp
+find_package(Assimp CONFIG)
+set(ASSIMP_INCLUDE_DIR "/include")
+set(ASSIMP_LIBRARIES assimp::assimp)
+
+# Vulkan
 if(${EXAMPLE_VULKAN})
     find_package(Vulkan REQUIRED)
     include_directories(BEFORE SYSTEM "${Vulkan_INCLUDE_DIR}")
@@ -90,4 +87,3 @@ if(OPENMP_FOUND)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${OpenMP_SHARED_LINKER_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
-
